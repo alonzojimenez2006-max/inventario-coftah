@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- El maximum-scale=1.0 evita que los celulares hagan zoom molesto al tocar un input -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Panel de Inventario - Materiales</title>
     <style>
@@ -34,11 +33,11 @@
         #dashboard-wrapper { display: none; height: 100vh; flex-direction: column; }
         #dashboard { display: flex; flex-grow: 1; overflow: hidden; }
         
-        /* MOBILE HEADER (Solo visible en celulares) */
+        /* MOBILE HEADER */
         .mobile-header { display: none; background-color: var(--primary-dark); color: white; padding: 15px 20px; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--accent-yellow); }
         .menu-btn { background: none; border: none; color: white; font-size: 26px; cursor: pointer; padding: 0; width: auto; }
         
-        /* OVERLAY (Fondo oscuro al abrir menú en móvil) */
+        /* OVERLAY */
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,40,85,0.6); z-index: 998; }
         .overlay.active { display: block; }
 
@@ -58,9 +57,9 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .section h2 { color: var(--primary-dark); border-bottom: 2px solid var(--accent-yellow); padding-bottom: 10px; display: inline-block; margin-top: 0; }
         
-        /* TABLAS (Con contenedor responsivo) */
-        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; background-color: var(--bg-white); min-width: 600px; }
+        /* TABLAS (PC) */
+        .table-responsive { width: 100%; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; background-color: var(--bg-white); }
         th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--border-color); }
         th { background-color: var(--primary-dark); color: white; font-weight: 600; border-bottom: 4px solid var(--accent-yellow); }
         tr:hover { background-color: var(--bg-light); }
@@ -72,7 +71,7 @@
         .form-row input, .form-row select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 15px; }
         
         /* BOTONES PEQUEÑOS */
-        .btn-small { width: auto; padding: 8px 14px; font-size: 13px; margin-right: 5px; margin-bottom: 5px; display: inline-flex; align-items: center; gap: 5px; background-color: var(--primary-dark); color: white; }
+        .btn-small { width: auto; padding: 8px 14px; font-size: 13px; margin-right: 5px; margin-bottom: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; background-color: var(--primary-dark); color: white; }
         .btn-danger { background-color: #ef4444; color: white; }
         .btn-success { background-color: var(--primary-dark); border: 1px solid var(--accent-yellow); }
         .btn-warning { background-color: var(--accent-yellow); color: var(--primary-dark); }
@@ -92,6 +91,48 @@
             .form-row button { margin-top: 10px; width: 100%; justify-content: center; }
             .grid-2 { grid-template-columns: 1fr; }
             .panel-box { padding: 15px; }
+            
+            /* DISEÑO DE TARJETAS PARA TABLAS EN MÓVIL */
+            .table-responsive { box-shadow: none; background: transparent; margin-top: 10px; }
+            table { min-width: 100%; background: transparent; border: none; box-shadow: none; }
+            thead { display: none; /* Ocultamos el encabezado azul que se cortaba */ }
+            tbody { display: block; width: 100%; }
+            
+            tr { 
+                display: block;
+                margin-bottom: 15px; 
+                background: white; 
+                border: 1px solid var(--border-color); 
+                border-top: 4px solid var(--primary-dark);
+                border-radius: 10px; 
+                padding: 5px 15px; 
+                box-shadow: 0 4px 8px rgba(0,40,85,0.08); 
+            }
+            
+            td { 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center; 
+                text-align: right; 
+                padding: 12px 0; 
+                border-bottom: 1px solid var(--border-color); 
+            }
+            td:last-child { border-bottom: none; }
+            
+            /* Inyectamos el título de cada columna (data-label) a la izquierda */
+            td::before { 
+                content: attr(data-label); 
+                font-weight: 700; 
+                color: var(--primary-dark); 
+                text-align: left; 
+                flex-basis: 40%; 
+                margin-right: 10px;
+                font-size: 13px;
+            }
+            
+            /* Agrupador de botones para que no se desborden */
+            td > div { flex: 1; display: flex; justify-content: flex-end; gap: 5px; flex-wrap: wrap; }
+            td > strong, td > span { flex: 1; text-align: right; }
         }
     </style>
 </head>
@@ -104,7 +145,6 @@
             <h2>Acceso al Sistema</h2>
             <div class="input-group">
                 <label>Usuario</label>
-                <!-- Los campos ahora están en blanco por seguridad -->
                 <input type="text" id="username" placeholder="Ingresa tu usuario">
             </div>
             <div class="input-group">
@@ -248,7 +288,7 @@
                     </div>
                 </div>
                 
-                <!-- CONFIGURACIÓN (NUEVA SECCIÓN) -->
+                <!-- CONFIGURACIÓN -->
                 <div id="configuracion" class="section">
                     <h2>⚙️ Configuración de Acceso</h2>
                     <p style="color: #64748b;">Actualiza las credenciales de seguridad para ingresar al sistema.</p>
@@ -271,24 +311,18 @@
     </div>
 
     <script>
-        // === GESTIÓN DE CREDENCIALES ===
-        // Si no hay credenciales guardadas en el navegador, usa admin / 123 por defecto
         let sysCreds = JSON.parse(localStorage.getItem('sysCreds')) || { user: 'admin', pass: '123' };
-
-        // === ESTADO GLOBAL ===
         let inventarioOficina = {};
         let facilitadores = [];
         let papelera = { productos: {}, facilitadores: [] };
         let currentFacIndex = null;
         let dataLoaded = false;
 
-        // Mostrar logo en PC y ocultarlo en Móvil vía JS para evitar saltos raros
         if(window.innerWidth > 800) {
             document.getElementById('desktop-logo').style.display = 'block';
             document.getElementById('desktop-title').style.display = 'block';
         }
 
-        // === CONEXIÓN CON LA API DE VERCEL/NEON ===
         async function loadData() {
             try {
                 document.getElementById('loading-msg').style.display = 'block';
@@ -306,7 +340,6 @@
                 if (document.getElementById('dashboard-wrapper').style.display === 'flex') updateAllViews();
             } catch (err) {
                 console.error("Error al cargar:", err);
-                // Si falla la API localmente (probando en PC sin internet), aún así permite loguear
                 dataLoaded = true; 
                 document.getElementById('loading-msg').innerText = "Modo Local / Error de Conexión";
             }
@@ -326,128 +359,115 @@
 
         window.onload = loadData;
 
-        // === LÓGICA DE INTERFAZ ===
         function login() {
             if(!dataLoaded) { alert("Espera a que conecte la base de datos..."); return; }
-            
             const u = document.getElementById('username').value.trim();
             const p = document.getElementById('password').value.trim();
-            
             if (u === sysCreds.user && p === sysCreds.pass) {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('dashboard-wrapper').style.display = 'flex';
-                // Limpiar campos por seguridad
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
+                document.getElementById('username').value = ''; document.getElementById('password').value = '';
                 updateAllViews();
-            } else {
-                alert('Usuario o contraseña incorrectos');
-            }
+            } else alert('Usuario o contraseña incorrectos');
         }
 
-        function logout() {
-            document.getElementById('dashboard-wrapper').style.display = 'none';
-            document.getElementById('login-screen').style.display = 'flex';
-        }
+        function logout() { document.getElementById('dashboard-wrapper').style.display = 'none'; document.getElementById('login-screen').style.display = 'flex'; }
         
         function updateCredentials() {
-            const newUser = document.getElementById('cfg-user').value.trim();
-            const newPass = document.getElementById('cfg-pass').value.trim();
-            
+            const newUser = document.getElementById('cfg-user').value.trim(); const newPass = document.getElementById('cfg-pass').value.trim();
             if(newUser && newPass) {
-                sysCreds = { user: newUser, pass: newPass };
-                localStorage.setItem('sysCreds', JSON.stringify(sysCreds));
+                sysCreds = { user: newUser, pass: newPass }; localStorage.setItem('sysCreds', JSON.stringify(sysCreds));
                 alert('✅ Credenciales actualizadas correctamente.');
-                document.getElementById('cfg-user').value = '';
-                document.getElementById('cfg-pass').value = '';
-            } else {
-                alert('⚠️ Por favor, ingresa un usuario y una contraseña.');
-            }
+                document.getElementById('cfg-user').value = ''; document.getElementById('cfg-pass').value = '';
+            } else alert('⚠️ Por favor, ingresa un usuario y una contraseña.');
         }
 
-        // Control del menú hamburguesa en móviles
         function toggleMenu() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobile-overlay');
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('active');
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('mobile-overlay').classList.toggle('active');
         }
 
         function showSection(id) {
             document.querySelectorAll('.section, .nav-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             event.currentTarget.classList.add('active');
-            
             if(id === 'facilitadores') closeFacDetail();
-            
-            // Si está en celular, cerrar el menú al hacer clic en una opción
             if (window.innerWidth <= 800) {
                 document.getElementById('sidebar').classList.remove('open');
                 document.getElementById('mobile-overlay').classList.remove('active');
             }
-            
             updateAllViews();
         }
 
-        function updateAllViews() {
-            renderGeneral(); renderOficina(); renderFacilitatorsList(); renderPapelera();
-            if(currentFacIndex !== null) renderFacilitatorDetail();
-        }
+        function updateAllViews() { renderGeneral(); renderOficina(); renderFacilitatorsList(); renderPapelera(); if(currentFacIndex !== null) renderFacilitatorDetail(); }
 
+        /* AHORA LAS CELDAS TIENEN EL ATRIBUTO "data-label" PARA LA VISTA MÓVIL */
         function renderGeneral() {
             const tbody = document.querySelector('#table-general tbody'); tbody.innerHTML = '';
             let todos = new Set(Object.keys(inventarioOficina));
             facilitadores.forEach(f => Object.keys(f.inventario).forEach(p => todos.add(p)));
             todos.forEach(prod => {
-                let sOfi = inventarioOficina[prod] || 0;
-                let sFac = 0; facilitadores.forEach(f => { if(f.inventario[prod]) sFac += f.inventario[prod]; });
-                tbody.innerHTML += `<tr><td><strong>${prod}</strong></td><td>${sOfi}</td><td>${sFac}</td><td><span class="badge">${sOfi + sFac}</span></td></tr>`;
+                let sOfi = inventarioOficina[prod] || 0; let sFac = 0; facilitadores.forEach(f => { if(f.inventario[prod]) sFac += f.inventario[prod]; });
+                tbody.innerHTML += `<tr>
+                    <td data-label="Producto"><strong>${prod}</strong></td>
+                    <td data-label="Stock en Oficina">${sOfi}</td>
+                    <td data-label="Distribuido">${sFac}</td>
+                    <td data-label="Total Global"><span class="badge">${sOfi + sFac}</span></td>
+                </tr>`;
             });
         }
 
         function renderOficina() {
             const tbody = document.querySelector('#table-oficina tbody'); tbody.innerHTML = '';
             for (let p in inventarioOficina) {
-                tbody.innerHTML += `<tr><td>${p}</td><td><strong>${inventarioOficina[p]}</strong></td>
-                    <td style="white-space: nowrap;"><button class="btn-small" onclick="adjustOffice('${p}', 1)">+1</button><button class="btn-small btn-warning" onclick="adjustOffice('${p}', -1)">-1</button></td>
-                    <td><button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button></td></tr>`;
+                tbody.innerHTML += `<tr>
+                    <td data-label="Producto">${p}</td>
+                    <td data-label="Stock Actual"><strong>${inventarioOficina[p]}</strong></td>
+                    <td data-label="Ajustar Stock">
+                        <div>
+                            <button class="btn-small" onclick="adjustOffice('${p}', 1)">+1</button>
+                            <button class="btn-small btn-warning" onclick="adjustOffice('${p}', -1)">-1</button>
+                        </div>
+                    </td>
+                    <td data-label="Borrar">
+                        <div><button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button></div>
+                    </td>
+                </tr>`;
             }
         }
 
         function addOfficeItem() {
-            const n = document.getElementById('new-item-name').value.trim();
-            const q = parseInt(document.getElementById('new-item-qty').value) || 0;
-            if (n && inventarioOficina[n] === undefined) {
-                inventarioOficina[n] = q; document.getElementById('new-item-name').value = '';
-                saveData(); updateAllViews();
-            }
+            const n = document.getElementById('new-item-name').value.trim(); const q = parseInt(document.getElementById('new-item-qty').value) || 0;
+            if (n && inventarioOficina[n] === undefined) { inventarioOficina[n] = q; document.getElementById('new-item-name').value = ''; saveData(); updateAllViews(); }
         }
 
         function adjustOffice(p, a) { if (inventarioOficina[p] + a >= 0) { inventarioOficina[p] += a; saveData(); updateAllViews(); } }
-        
-        function deleteOfficeItem(p) {
-            if(confirm(`¿Enviar '${p}' a papelera?`)) { papelera.productos[p] = inventarioOficina[p]; delete inventarioOficina[p]; saveData(); updateAllViews(); }
-        }
-
+        function deleteOfficeItem(p) { if(confirm(`¿Enviar '${p}' a papelera?`)) { papelera.productos[p] = inventarioOficina[p]; delete inventarioOficina[p]; saveData(); updateAllViews(); } }
         function countTotalItems(inv) { return Object.values(inv).reduce((a, b) => a + b, 0); }
 
         function renderFacilitatorsList() {
             const tbody = document.querySelector('#table-fac-list tbody'); tbody.innerHTML = '';
             facilitadores.forEach((f, i) => {
-                tbody.innerHTML += `<tr><td style="white-space:nowrap;">${f.id}</td><td><strong>${f.nombre}</strong></td><td><span class="badge" style="background:#e2e8f0; color:#1e293b">${countTotalItems(f.inventario)} items</span></td>
-                    <td style="white-space: nowrap;"><button class="btn-small" onclick="openFacDetail(${i})">Gestionar</button><button class="btn-small btn-danger" onclick="deleteFacilitator(${i})">🗑️</button></td></tr>`;
+                tbody.innerHTML += `<tr>
+                    <td data-label="Cédula">${f.id}</td>
+                    <td data-label="Nombre"><strong>${f.nombre}</strong></td>
+                    <td data-label="Material Asignado"><span class="badge" style="background:#e2e8f0; color:#1e293b">${countTotalItems(f.inventario)} items</span></td>
+                    <td data-label="Acciones">
+                        <div>
+                            <button class="btn-small" onclick="openFacDetail(${i})">Gestionar</button>
+                            <button class="btn-small btn-danger" onclick="deleteFacilitator(${i})">🗑️</button>
+                        </div>
+                    </td>
+                </tr>`;
             });
         }
 
         function addFacilitator() {
             const n = document.getElementById('new-fac-name').value.trim(); const id = document.getElementById('new-fac-id').value.trim();
-            if (n && id) { facilitadores.push({ id, nombre: n, inventario: {} }); document.getElementById('new-fac-name').value = ''; saveData(); updateAllViews(); }
+            if (n && id) { facilitadores.push({ id, nombre: n, inventario: {} }); document.getElementById('new-fac-name').value = ''; document.getElementById('new-fac-id').value = ''; saveData(); updateAllViews(); }
         }
 
-        function deleteFacilitator(i) {
-            if(confirm('¿Enviar facilitador a papelera?')) { papelera.facilitadores.push(facilitadores.splice(i, 1)[0]); saveData(); updateAllViews(); }
-        }
-
+        function deleteFacilitator(i) { if(confirm('¿Enviar facilitador a papelera?')) { papelera.facilitadores.push(facilitadores.splice(i, 1)[0]); saveData(); updateAllViews(); } }
         function openFacDetail(i) { currentFacIndex = i; document.getElementById('view-fac-list').style.display = 'none'; document.getElementById('view-fac-detail').style.display = 'block'; renderFacilitatorDetail(); }
         function closeFacDetail() { currentFacIndex = null; document.getElementById('view-fac-list').style.display = 'block'; document.getElementById('view-fac-detail').style.display = 'none'; }
 
@@ -456,16 +476,24 @@
             const sel = document.getElementById('fac-sel-producto'); sel.innerHTML = '';
             for (let p in inventarioOficina) sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`;
             const tbody = document.querySelector('#table-fac-inventory tbody'); tbody.innerHTML = '';
-            for (let p in f.inventario) tbody.innerHTML += `<tr><td>${p}</td><td><strong>${f.inventario[p]}</strong></td>
-                <td style="white-space: nowrap;"><button class="btn-small" onclick="adjustFacItem('${p}', 1)">+1</button><button class="btn-small btn-warning" onclick="adjustFacItem('${p}', -1)">-1</button><button class="btn-small btn-danger" onclick="returnToOffice('${p}')">Devolver</button></td></tr>`;
+            for (let p in f.inventario) {
+                tbody.innerHTML += `<tr>
+                    <td data-label="Producto">${p}</td>
+                    <td data-label="Cantidad"><strong>${f.inventario[p]}</strong></td>
+                    <td data-label="Acciones">
+                        <div>
+                            <button class="btn-small" onclick="adjustFacItem('${p}', 1)">+1</button>
+                            <button class="btn-small btn-warning" onclick="adjustFacItem('${p}', -1)">-1</button>
+                            <button class="btn-small btn-danger" onclick="returnToOffice('${p}')">Devolver</button>
+                        </div>
+                    </td>
+                </tr>`;
+            }
         }
 
         function transferFromOffice() {
             const p = document.getElementById('fac-sel-producto').value; const q = parseInt(document.getElementById('fac-transfer-qty').value);
-            if (p && q > 0) {
-                if (inventarioOficina[p] >= q) { inventarioOficina[p] -= q; const f = facilitadores[currentFacIndex]; f.inventario[p] = (f.inventario[p] || 0) + q; saveData(); updateAllViews(); } 
-                else alert('Stock insuficiente en oficina');
-            }
+            if (p && q > 0) { if (inventarioOficina[p] >= q) { inventarioOficina[p] -= q; const f = facilitadores[currentFacIndex]; f.inventario[p] = (f.inventario[p] || 0) + q; saveData(); updateAllViews(); } else alert('Stock insuficiente en oficina'); }
         }
 
         function addDirectProduct() {
@@ -478,9 +506,32 @@
 
         function renderPapelera() {
             const tP = document.querySelector('#table-papelera-prod tbody'); tP.innerHTML = '';
-            for(let p in papelera.productos) tP.innerHTML += `<tr><td>${p}</td><td>${papelera.productos[p]}</td><td style="white-space: nowrap;"><button class="btn-small btn-success" onclick="restoreProduct('${p}')">♻️</button><button class="btn-small btn-danger" onclick="hardDeleteProduct('${p}')">❌</button></td></tr>`;
+            for(let p in papelera.productos) {
+                tP.innerHTML += `<tr>
+                    <td data-label="Producto">${p}</td>
+                    <td data-label="Stock que tenía">${papelera.productos[p]}</td>
+                    <td data-label="Acciones">
+                        <div>
+                            <button class="btn-small btn-success" onclick="restoreProduct('${p}')">♻️</button>
+                            <button class="btn-small btn-danger" onclick="hardDeleteProduct('${p}')">❌</button>
+                        </div>
+                    </td>
+                </tr>`;
+            }
             const tF = document.querySelector('#table-papelera-fac tbody'); tF.innerHTML = '';
-            papelera.facilitadores.forEach((f, i) => { tF.innerHTML += `<tr><td style="white-space:nowrap;">${f.id}</td><td>${f.nombre}</td><td>${countTotalItems(f.inventario)} items</td><td style="white-space: nowrap;"><button class="btn-small btn-success" onclick="restoreFacilitator(${i})">♻️</button><button class="btn-small btn-danger" onclick="hardDeleteFacilitator(${i})">❌</button></td></tr>`; });
+            papelera.facilitadores.forEach((f, i) => { 
+                tF.innerHTML += `<tr>
+                    <td data-label="Cédula">${f.id}</td>
+                    <td data-label="Nombre">${f.nombre}</td>
+                    <td data-label="Material">${countTotalItems(f.inventario)} items</td>
+                    <td data-label="Acciones">
+                        <div>
+                            <button class="btn-small btn-success" onclick="restoreFacilitator(${i})">♻️</button>
+                            <button class="btn-small btn-danger" onclick="hardDeleteFacilitator(${i})">❌</button>
+                        </div>
+                    </td>
+                </tr>`; 
+            });
         }
 
         function restoreProduct(p) { inventarioOficina[p] = (inventarioOficina[p] !== undefined ? inventarioOficina[p] : 0) + papelera.productos[p]; delete papelera.productos[p]; saveData(); updateAllViews(); }
