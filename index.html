@@ -57,10 +57,10 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .section h2 { color: var(--primary-dark); border-bottom: 2px solid var(--accent-yellow); padding-bottom: 10px; display: inline-block; margin-top: 0; }
         
-        /* TABLAS (PC) */
-        .table-responsive { width: 100%; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; background-color: var(--bg-white); }
-        th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        /* TABLAS: Diseño clásico con scroll horizontal para móviles */
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 20px; background-color: var(--bg-white); }
+        table { width: 100%; border-collapse: collapse; min-width: 650px; /* Obliga a la tabla a mantener su forma, activando el scroll en móviles */ }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; /* Evita que el texto se rompa hacia abajo */ }
         th { background-color: var(--primary-dark); color: white; font-weight: 600; border-bottom: 4px solid var(--accent-yellow); }
         tr:hover { background-color: var(--bg-light); }
         
@@ -71,12 +71,12 @@
         .form-row input, .form-row select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 15px; }
         
         /* BOTONES PEQUEÑOS */
-        .btn-small { width: auto; padding: 8px 14px; font-size: 13px; margin-right: 5px; margin-bottom: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; background-color: var(--primary-dark); color: white; }
+        .btn-small { width: auto; padding: 8px 14px; font-size: 13px; margin-right: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; background-color: var(--primary-dark); color: white; }
         .btn-danger { background-color: #ef4444; color: white; }
         .btn-success { background-color: var(--primary-dark); border: 1px solid var(--accent-yellow); }
         .btn-warning { background-color: var(--accent-yellow); color: var(--primary-dark); }
         .btn-dark { background-color: var(--bg-light); color: var(--primary-dark); border: 1px solid var(--border-color); }
-        .badge { background: var(--accent-yellow); color: var(--primary-dark); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; white-space: nowrap; }
+        .badge { background: var(--accent-yellow); color: var(--primary-dark); padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
         .panel-box { background: var(--bg-white); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); border-top: 4px solid var(--primary-dark); box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
@@ -91,48 +91,8 @@
             .form-row button { margin-top: 10px; width: 100%; justify-content: center; }
             .grid-2 { grid-template-columns: 1fr; }
             .panel-box { padding: 15px; }
-            
-            /* DISEÑO DE TARJETAS PARA TABLAS EN MÓVIL */
-            .table-responsive { box-shadow: none; background: transparent; margin-top: 10px; }
-            table { min-width: 100%; background: transparent; border: none; box-shadow: none; }
-            thead { display: none; /* Ocultamos el encabezado azul que se cortaba */ }
-            tbody { display: block; width: 100%; }
-            
-            tr { 
-                display: block;
-                margin-bottom: 15px; 
-                background: white; 
-                border: 1px solid var(--border-color); 
-                border-top: 4px solid var(--primary-dark);
-                border-radius: 10px; 
-                padding: 5px 15px; 
-                box-shadow: 0 4px 8px rgba(0,40,85,0.08); 
-            }
-            
-            td { 
-                display: flex; 
-                justify-content: space-between; 
-                align-items: center; 
-                text-align: right; 
-                padding: 12px 0; 
-                border-bottom: 1px solid var(--border-color); 
-            }
-            td:last-child { border-bottom: none; }
-            
-            /* Inyectamos el título de cada columna (data-label) a la izquierda */
-            td::before { 
-                content: attr(data-label); 
-                font-weight: 700; 
-                color: var(--primary-dark); 
-                text-align: left; 
-                flex-basis: 40%; 
-                margin-right: 10px;
-                font-size: 13px;
-            }
-            
-            /* Agrupador de botones para que no se desborden */
-            td > div { flex: 1; display: flex; justify-content: flex-end; gap: 5px; flex-wrap: wrap; }
-            td > strong, td > span { flex: 1; text-align: right; }
+            /* Nota: Eliminamos las configuraciones raras de tablas aquí.
+               Ahora .table-responsive se encarga de todo con scroll horizontal. */
         }
     </style>
 </head>
@@ -401,7 +361,6 @@
 
         function updateAllViews() { renderGeneral(); renderOficina(); renderFacilitatorsList(); renderPapelera(); if(currentFacIndex !== null) renderFacilitatorDetail(); }
 
-        /* AHORA LAS CELDAS TIENEN EL ATRIBUTO "data-label" PARA LA VISTA MÓVIL */
         function renderGeneral() {
             const tbody = document.querySelector('#table-general tbody'); tbody.innerHTML = '';
             let todos = new Set(Object.keys(inventarioOficina));
@@ -409,10 +368,10 @@
             todos.forEach(prod => {
                 let sOfi = inventarioOficina[prod] || 0; let sFac = 0; facilitadores.forEach(f => { if(f.inventario[prod]) sFac += f.inventario[prod]; });
                 tbody.innerHTML += `<tr>
-                    <td data-label="Producto"><strong>${prod}</strong></td>
-                    <td data-label="Stock en Oficina">${sOfi}</td>
-                    <td data-label="Distribuido">${sFac}</td>
-                    <td data-label="Total Global"><span class="badge">${sOfi + sFac}</span></td>
+                    <td><strong>${prod}</strong></td>
+                    <td>${sOfi}</td>
+                    <td>${sFac}</td>
+                    <td><span class="badge">${sOfi + sFac}</span></td>
                 </tr>`;
             });
         }
@@ -421,16 +380,14 @@
             const tbody = document.querySelector('#table-oficina tbody'); tbody.innerHTML = '';
             for (let p in inventarioOficina) {
                 tbody.innerHTML += `<tr>
-                    <td data-label="Producto">${p}</td>
-                    <td data-label="Stock Actual"><strong>${inventarioOficina[p]}</strong></td>
-                    <td data-label="Ajustar Stock">
-                        <div>
-                            <button class="btn-small" onclick="adjustOffice('${p}', 1)">+1</button>
-                            <button class="btn-small btn-warning" onclick="adjustOffice('${p}', -1)">-1</button>
-                        </div>
+                    <td>${p}</td>
+                    <td><strong>${inventarioOficina[p]}</strong></td>
+                    <td>
+                        <button class="btn-small" onclick="adjustOffice('${p}', 1)">+1</button>
+                        <button class="btn-small btn-warning" onclick="adjustOffice('${p}', -1)">-1</button>
                     </td>
-                    <td data-label="Borrar">
-                        <div><button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button></div>
+                    <td>
+                        <button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button>
                     </td>
                 </tr>`;
             }
@@ -449,14 +406,12 @@
             const tbody = document.querySelector('#table-fac-list tbody'); tbody.innerHTML = '';
             facilitadores.forEach((f, i) => {
                 tbody.innerHTML += `<tr>
-                    <td data-label="Cédula">${f.id}</td>
-                    <td data-label="Nombre"><strong>${f.nombre}</strong></td>
-                    <td data-label="Material Asignado"><span class="badge" style="background:#e2e8f0; color:#1e293b">${countTotalItems(f.inventario)} items</span></td>
-                    <td data-label="Acciones">
-                        <div>
-                            <button class="btn-small" onclick="openFacDetail(${i})">Gestionar</button>
-                            <button class="btn-small btn-danger" onclick="deleteFacilitator(${i})">🗑️</button>
-                        </div>
+                    <td>${f.id}</td>
+                    <td><strong>${f.nombre}</strong></td>
+                    <td><span class="badge" style="background:#e2e8f0; color:#1e293b">${countTotalItems(f.inventario)} items</span></td>
+                    <td>
+                        <button class="btn-small" onclick="openFacDetail(${i})">Gestionar</button>
+                        <button class="btn-small btn-danger" onclick="deleteFacilitator(${i})">🗑️</button>
                     </td>
                 </tr>`;
             });
@@ -478,14 +433,12 @@
             const tbody = document.querySelector('#table-fac-inventory tbody'); tbody.innerHTML = '';
             for (let p in f.inventario) {
                 tbody.innerHTML += `<tr>
-                    <td data-label="Producto">${p}</td>
-                    <td data-label="Cantidad"><strong>${f.inventario[p]}</strong></td>
-                    <td data-label="Acciones">
-                        <div>
-                            <button class="btn-small" onclick="adjustFacItem('${p}', 1)">+1</button>
-                            <button class="btn-small btn-warning" onclick="adjustFacItem('${p}', -1)">-1</button>
-                            <button class="btn-small btn-danger" onclick="returnToOffice('${p}')">Devolver</button>
-                        </div>
+                    <td>${p}</td>
+                    <td><strong>${f.inventario[p]}</strong></td>
+                    <td>
+                        <button class="btn-small" onclick="adjustFacItem('${p}', 1)">+1</button>
+                        <button class="btn-small btn-warning" onclick="adjustFacItem('${p}', -1)">-1</button>
+                        <button class="btn-small btn-danger" onclick="returnToOffice('${p}')">Devolver</button>
                     </td>
                 </tr>`;
             }
@@ -508,27 +461,23 @@
             const tP = document.querySelector('#table-papelera-prod tbody'); tP.innerHTML = '';
             for(let p in papelera.productos) {
                 tP.innerHTML += `<tr>
-                    <td data-label="Producto">${p}</td>
-                    <td data-label="Stock que tenía">${papelera.productos[p]}</td>
-                    <td data-label="Acciones">
-                        <div>
-                            <button class="btn-small btn-success" onclick="restoreProduct('${p}')">♻️</button>
-                            <button class="btn-small btn-danger" onclick="hardDeleteProduct('${p}')">❌</button>
-                        </div>
+                    <td>${p}</td>
+                    <td>${papelera.productos[p]}</td>
+                    <td>
+                        <button class="btn-small btn-success" onclick="restoreProduct('${p}')">♻️</button>
+                        <button class="btn-small btn-danger" onclick="hardDeleteProduct('${p}')">❌</button>
                     </td>
                 </tr>`;
             }
             const tF = document.querySelector('#table-papelera-fac tbody'); tF.innerHTML = '';
             papelera.facilitadores.forEach((f, i) => { 
                 tF.innerHTML += `<tr>
-                    <td data-label="Cédula">${f.id}</td>
-                    <td data-label="Nombre">${f.nombre}</td>
-                    <td data-label="Material">${countTotalItems(f.inventario)} items</td>
-                    <td data-label="Acciones">
-                        <div>
-                            <button class="btn-small btn-success" onclick="restoreFacilitator(${i})">♻️</button>
-                            <button class="btn-small btn-danger" onclick="hardDeleteFacilitator(${i})">❌</button>
-                        </div>
+                    <td>${f.id}</td>
+                    <td>${f.nombre}</td>
+                    <td>${countTotalItems(f.inventario)} items</td>
+                    <td>
+                        <button class="btn-small btn-success" onclick="restoreFacilitator(${i})">♻️</button>
+                        <button class="btn-small btn-danger" onclick="hardDeleteFacilitator(${i})">❌</button>
                     </td>
                 </tr>`; 
             });
