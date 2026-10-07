@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <!-- Etiqueta crítica para que el celular no deforme la pantalla -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Panel de Inventario - Materiales</title>
     <style>
@@ -56,35 +57,35 @@
             padding: 30px; 
             overflow-y: auto; 
             background-color: var(--bg-white); 
-            min-width: 0; /* CRÍTICO para celulares */
+            min-width: 0; 
         }
         .section { display: none; }
         .section.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .section h2 { color: var(--primary-dark); border-bottom: 2px solid var(--accent-yellow); padding-bottom: 10px; display: inline-block; margin-top: 0; }
         
-        /* TABLAS: Diseño clásico con scroll horizontal ESTRICTO */
+        /* ================= SOLUCIÓN DE RECUADROS PARA CELULARES ================= */
         .table-responsive { 
             width: 100%; 
-            overflow-x: auto; 
+            overflow-x: auto; /* Fuerza la barra de desplazamiento horizontal */
             -webkit-overflow-scrolling: touch; 
-            border-radius: 8px; 
-            border: 1px solid var(--border-color); 
             background-color: var(--bg-white); 
             margin-top: 20px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 2px solid var(--border-color); /* Un borde más grueso para que se note el recuadro */
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             display: block;
         }
         table { 
             width: 100%; 
-            min-width: 650px; /* Fuerza la barra de desplazamiento en móvil */
+            min-width: 700px; /* Al obligar a la tabla a medir 700px, el celular TIENE que crear el recuadro deslizable */
             border-collapse: collapse; 
         }
         th, td { 
             padding: 15px; 
             text-align: left; 
             border-bottom: 1px solid var(--border-color); 
-            white-space: nowrap; /* Evita que el texto y los botones se amontonen */
+            white-space: nowrap; /* Evita que los botones o textos se aplasten */
         }
         th { background-color: var(--primary-dark); color: white; font-weight: 600; border-bottom: 4px solid var(--accent-yellow); }
         tr:hover { background-color: var(--bg-light); }
@@ -104,6 +105,9 @@
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
         .panel-box { background: var(--bg-white); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); border-top: 4px solid var(--primary-dark); box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        
+        /* Status Bar */
+        #sync-status { padding: 8px; text-align: center; font-size: 12px; font-weight: bold; background: #e2e8f0; color: #475569; border-radius: 4px; margin-bottom: 15px; display: none; }
 
         /* ================= MEDIA QUERIES (CELULARES) ================= */
         @media (max-width: 800px) {
@@ -120,7 +124,6 @@
 </head>
 <body>
 
-    <!-- Pantalla de Login -->
     <div id="login-screen">
         <div class="login-box">
             <img src="CURSO_H2S_Capitulo_1.ppt-removebg-preview.png" alt="Logo">
@@ -134,13 +137,11 @@
                 <input type="password" id="password" placeholder="Ingresa tu contraseña">
             </div>
             <button id="btn-login" onclick="login()">Ingresar</button>
-            <p id="loading-msg" style="display:none; text-align:center; font-size:13px; color:var(--primary-dark); font-weight: bold; margin-top: 15px;">Conectando a la base de datos...</p>
+            <p id="loading-msg" style="display:none; text-align:center; font-size:13px; color:var(--primary-dark); font-weight: bold; margin-top: 15px;">Conectando al sistema...</p>
         </div>
     </div>
 
-    <!-- Contenedor Principal (Dashboard) -->
     <div id="dashboard-wrapper">
-        <!-- Encabezado Móvil -->
         <div class="mobile-header">
             <img src="CURSO_H2S_Capitulo_1.ppt-removebg-preview.png" alt="Logo" style="height: 40px; filter: brightness(0) invert(1);">
             <span style="font-weight: bold; font-size: 18px; color: var(--accent-yellow);">Gestión de Almacén</span>
@@ -168,6 +169,7 @@
             </div>
 
             <div class="main-content">
+                <div id="sync-status">Guardado localmente. Intentando conectar con base de datos...</div>
                 
                 <!-- INVENTARIO GENERAL -->
                 <div id="general" class="section active">
@@ -222,10 +224,10 @@
                                 <h3>Trasladar material de Oficina</h3>
                                 <div style="margin-bottom: 10px;">
                                     <label style="font-size: 13px; font-weight: bold;">Producto de Oficina:</label>
-                                    <select id="fac-sel-producto" style="width: 100%; padding: 8px;"></select>
+                                    <select id="fac-sel-producto" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></select>
                                 </div>
                                 <div style="display: flex; gap: 10px;">
-                                    <input type="number" id="fac-transfer-qty" value="1" min="1" style="flex: 1; padding: 8px;">
+                                    <input type="number" id="fac-transfer-qty" value="1" min="1" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                                     <button class="btn-small" onclick="transferFromOffice()" style="margin:0;">Trasladar</button>
                                 </div>
                             </div>
@@ -233,10 +235,10 @@
                                 <h3>Asignar Producto Nuevo (Directo)</h3>
                                 <div style="margin-bottom: 10px;">
                                     <label style="font-size: 13px; font-weight: bold;">Nombre del nuevo producto:</label>
-                                    <input type="text" id="fac-direct-prod" placeholder="Ej: Marcadores Azules" style="width: 100%; padding: 8px;">
+                                    <input type="text" id="fac-direct-prod" placeholder="Ej: Marcadores Azules" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                                 </div>
                                 <div style="display: flex; gap: 10px;">
-                                    <input type="number" id="fac-direct-qty" value="1" min="1" style="flex: 1; padding: 8px;">
+                                    <input type="number" id="fac-direct-qty" value="1" min="1" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                                     <button class="btn-small btn-success" onclick="addDirectProduct()" style="margin:0;">Crear y Sumar</button>
                                 </div>
                             </div>
@@ -294,57 +296,78 @@
 
     <script>
         let sysCreds = JSON.parse(localStorage.getItem('sysCreds')) || { user: 'admin', pass: '123' };
-        let inventarioOficina = {};
-        let facilitadores = [];
-        let papelera = { productos: {}, facilitadores: [] };
-        let currentFacIndex = null;
-        let dataLoaded = false;
+        let inventarioOficina = {}; let facilitadores = []; let papelera = { productos: {}, facilitadores: [] };
+        let currentFacIndex = null; let dataLoaded = false;
 
-        if(window.innerWidth > 800) {
-            document.getElementById('desktop-logo').style.display = 'block';
-            document.getElementById('desktop-title').style.display = 'block';
-        }
+        if(window.innerWidth > 800) { document.getElementById('desktop-logo').style.display = 'block'; document.getElementById('desktop-title').style.display = 'block'; }
 
+        // MODO BLINDADO: Carga primero desde la memoria del celular/PC
         async function loadData() {
             try {
                 document.getElementById('loading-msg').style.display = 'block';
+                
+                // 1. Rescatar datos locales por si falla el internet o la base de datos
+                const backupLocal = localStorage.getItem('coftah_datos_seguros');
+                if (backupLocal) {
+                    const parsed = JSON.parse(backupLocal);
+                    inventarioOficina = parsed.oficina || {};
+                    facilitadores = parsed.facilitadores || [];
+                    papelera = parsed.papelera || { productos: {}, facilitadores: [] };
+                }
+
+                // 2. Intentar traer los datos actualizados de la Base de Datos
                 const res = await fetch('/api/sync');
                 if(res.ok) {
                     const data = await res.json();
-                    if(data) {
-                        inventarioOficina = data.oficina || {};
-                        facilitadores = data.facilitadores || [];
-                        papelera = data.papelera || { productos: {}, facilitadores: [] };
+                    if(data && data.oficina) {
+                        inventarioOficina = data.oficina; facilitadores = data.facilitadores; papelera = data.papelera;
+                        // Sobrescribir el backup con lo más nuevo de la nube
+                        localStorage.setItem('coftah_datos_seguros', JSON.stringify({ oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera }));
                     }
                 }
-                dataLoaded = true;
-                document.getElementById('loading-msg').style.display = 'none';
-                if (document.getElementById('dashboard-wrapper').style.display === 'flex') updateAllViews();
             } catch (err) {
-                console.error("Error al cargar:", err);
-                dataLoaded = true; 
-                document.getElementById('loading-msg').innerText = "Modo Local / Error de Conexión";
+                console.error("Fallo de red. Usando memoria local.");
+                document.getElementById('sync-status').style.display = 'block';
+                document.getElementById('sync-status').innerText = '⚠️ Usando modo sin conexión (Los datos están a salvo en este dispositivo)';
+                document.getElementById('sync-status').style.background = '#fef08a';
+                document.getElementById('sync-status').style.color = '#854d0e';
+            } finally {
+                dataLoaded = true; document.getElementById('loading-msg').style.display = 'none';
+                if (document.getElementById('dashboard-wrapper').style.display === 'flex') updateAllViews();
             }
         }
 
+        // MODO BLINDADO: Guarda en tu teléfono inmediatamente y luego en la nube
         async function saveData() {
+            const dataToSave = { oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera };
+            
+            // 1. Guardar de forma ultra segura en la memoria del navegador
+            localStorage.setItem('coftah_datos_seguros', JSON.stringify(dataToSave));
+            
+            // 2. Intentar guardar en la nube
             try {
-                await fetch('/api/sync', {
+                const res = await fetch('/api/sync', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera })
+                    body: JSON.stringify(dataToSave)
                 });
+                if(!res.ok) throw new Error("Base de datos no respondió");
+                
+                document.getElementById('sync-status').style.display = 'none';
             } catch (err) {
-                console.error("Error al guardar:", err);
+                console.error("Error nube, pero está guardado local:", err);
+                document.getElementById('sync-status').style.display = 'block';
+                document.getElementById('sync-status').innerText = '⚠️ Error conectando a BD. Datos guardados temporalmente en este equipo.';
+                document.getElementById('sync-status').style.background = '#fecaca';
+                document.getElementById('sync-status').style.color = '#991b1b';
             }
         }
 
         window.onload = loadData;
 
         function login() {
-            if(!dataLoaded) { alert("Espera a que conecte la base de datos..."); return; }
-            const u = document.getElementById('username').value.trim();
-            const p = document.getElementById('password').value.trim();
+            if(!dataLoaded) { alert("Espera a cargar el sistema..."); return; }
+            const u = document.getElementById('username').value.trim(); const p = document.getElementById('password').value.trim();
             if (u === sysCreds.user && p === sysCreds.pass) {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('dashboard-wrapper').style.display = 'flex';
@@ -359,25 +382,17 @@
             const newUser = document.getElementById('cfg-user').value.trim(); const newPass = document.getElementById('cfg-pass').value.trim();
             if(newUser && newPass) {
                 sysCreds = { user: newUser, pass: newPass }; localStorage.setItem('sysCreds', JSON.stringify(sysCreds));
-                alert('✅ Credenciales actualizadas correctamente.');
-                document.getElementById('cfg-user').value = ''; document.getElementById('cfg-pass').value = '';
+                alert('✅ Credenciales actualizadas correctamente.'); document.getElementById('cfg-user').value = ''; document.getElementById('cfg-pass').value = '';
             } else alert('⚠️ Por favor, ingresa un usuario y una contraseña.');
         }
 
-        function toggleMenu() {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('mobile-overlay').classList.toggle('active');
-        }
+        function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('mobile-overlay').classList.toggle('active'); }
 
         function showSection(id) {
             document.querySelectorAll('.section, .nav-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            event.currentTarget.classList.add('active');
+            document.getElementById(id).classList.add('active'); event.currentTarget.classList.add('active');
             if(id === 'facilitadores') closeFacDetail();
-            if (window.innerWidth <= 800) {
-                document.getElementById('sidebar').classList.remove('open');
-                document.getElementById('mobile-overlay').classList.remove('active');
-            }
+            if (window.innerWidth <= 800) { document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobile-overlay').classList.remove('active'); }
             updateAllViews();
         }
 
@@ -389,29 +404,16 @@
             facilitadores.forEach(f => Object.keys(f.inventario).forEach(p => todos.add(p)));
             todos.forEach(prod => {
                 let sOfi = inventarioOficina[prod] || 0; let sFac = 0; facilitadores.forEach(f => { if(f.inventario[prod]) sFac += f.inventario[prod]; });
-                tbody.innerHTML += `<tr>
-                    <td><strong>${prod}</strong></td>
-                    <td>${sOfi}</td>
-                    <td>${sFac}</td>
-                    <td><span class="badge">${sOfi + sFac}</span></td>
-                </tr>`;
+                tbody.innerHTML += `<tr><td><strong>${prod}</strong></td><td>${sOfi}</td><td>${sFac}</td><td><span class="badge">${sOfi + sFac}</span></td></tr>`;
             });
         }
 
         function renderOficina() {
             const tbody = document.querySelector('#table-oficina tbody'); tbody.innerHTML = '';
             for (let p in inventarioOficina) {
-                tbody.innerHTML += `<tr>
-                    <td>${p}</td>
-                    <td><strong>${inventarioOficina[p]}</strong></td>
-                    <td>
-                        <button class="btn-small" onclick="adjustOffice('${p}', 1)">+1</button>
-                        <button class="btn-small btn-warning" onclick="adjustOffice('${p}', -1)">-1</button>
-                    </td>
-                    <td>
-                        <button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button>
-                    </td>
-                </tr>`;
+                tbody.innerHTML += `<tr><td>${p}</td><td><strong>${inventarioOficina[p]}</strong></td>
+                    <td><button class="btn-small" onclick="adjustOffice('${p}', 1)">+1</button><button class="btn-small btn-warning" onclick="adjustOffice('${p}', -1)">-1</button></td>
+                    <td><button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button></td></tr>`;
             }
         }
 
@@ -427,15 +429,8 @@
         function renderFacilitatorsList() {
             const tbody = document.querySelector('#table-fac-list tbody'); tbody.innerHTML = '';
             facilitadores.forEach((f, i) => {
-                tbody.innerHTML += `<tr>
-                    <td>${f.id}</td>
-                    <td><strong>${f.nombre}</strong></td>
-                    <td><span class="badge" style="background:#e2e8f0; color:#1e293b">${countTotalItems(f.inventario)} items</span></td>
-                    <td>
-                        <button class="btn-small" onclick="openFacDetail(${i})">Gestionar</button>
-                        <button class="btn-small btn-danger" onclick="deleteFacilitator(${i})">🗑️</button>
-                    </td>
-                </tr>`;
+                tbody.innerHTML += `<tr><td>${f.id}</td><td><strong>${f.nombre}</strong></td><td><span class="badge" style="background:#e2e8f0; color:#1e293b">${countTotalItems(f.inventario)} items</span></td>
+                    <td><button class="btn-small" onclick="openFacDetail(${i})">Gestionar</button><button class="btn-small btn-danger" onclick="deleteFacilitator(${i})">🗑️</button></td></tr>`;
             });
         }
 
@@ -454,15 +449,8 @@
             for (let p in inventarioOficina) sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`;
             const tbody = document.querySelector('#table-fac-inventory tbody'); tbody.innerHTML = '';
             for (let p in f.inventario) {
-                tbody.innerHTML += `<tr>
-                    <td>${p}</td>
-                    <td><strong>${f.inventario[p]}</strong></td>
-                    <td>
-                        <button class="btn-small" onclick="adjustFacItem('${p}', 1)">+1</button>
-                        <button class="btn-small btn-warning" onclick="adjustFacItem('${p}', -1)">-1</button>
-                        <button class="btn-small btn-danger" onclick="returnToOffice('${p}')">Devolver</button>
-                    </td>
-                </tr>`;
+                tbody.innerHTML += `<tr><td>${p}</td><td><strong>${f.inventario[p]}</strong></td>
+                    <td><button class="btn-small" onclick="adjustFacItem('${p}', 1)">+1</button><button class="btn-small btn-warning" onclick="adjustFacItem('${p}', -1)">-1</button><button class="btn-small btn-danger" onclick="returnToOffice('${p}')">Devolver</button></td></tr>`;
             }
         }
 
@@ -481,28 +469,9 @@
 
         function renderPapelera() {
             const tP = document.querySelector('#table-papelera-prod tbody'); tP.innerHTML = '';
-            for(let p in papelera.productos) {
-                tP.innerHTML += `<tr>
-                    <td>${p}</td>
-                    <td>${papelera.productos[p]}</td>
-                    <td>
-                        <button class="btn-small btn-success" onclick="restoreProduct('${p}')">♻️</button>
-                        <button class="btn-small btn-danger" onclick="hardDeleteProduct('${p}')">❌</button>
-                    </td>
-                </tr>`;
-            }
+            for(let p in papelera.productos) { tP.innerHTML += `<tr><td>${p}</td><td>${papelera.productos[p]}</td><td><button class="btn-small btn-success" onclick="restoreProduct('${p}')">♻️</button><button class="btn-small btn-danger" onclick="hardDeleteProduct('${p}')">❌</button></td></tr>`; }
             const tF = document.querySelector('#table-papelera-fac tbody'); tF.innerHTML = '';
-            papelera.facilitadores.forEach((f, i) => { 
-                tF.innerHTML += `<tr>
-                    <td>${f.id}</td>
-                    <td>${f.nombre}</td>
-                    <td>${countTotalItems(f.inventario)} items</td>
-                    <td>
-                        <button class="btn-small btn-success" onclick="restoreFacilitator(${i})">♻️</button>
-                        <button class="btn-small btn-danger" onclick="hardDeleteFacilitator(${i})">❌</button>
-                    </td>
-                </tr>`; 
-            });
+            papelera.facilitadores.forEach((f, i) => { tF.innerHTML += `<tr><td>${f.id}</td><td>${f.nombre}</td><td>${countTotalItems(f.inventario)} items</td><td><button class="btn-small btn-success" onclick="restoreFacilitator(${i})">♻️</button><button class="btn-small btn-danger" onclick="hardDeleteFacilitator(${i})">❌</button></td></tr>`; });
         }
 
         function restoreProduct(p) { inventarioOficina[p] = (inventarioOficina[p] !== undefined ? inventarioOficina[p] : 0) + papelera.productos[p]; delete papelera.productos[p]; saveData(); updateAllViews(); }
