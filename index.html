@@ -30,8 +30,8 @@
         button:hover { background-color: var(--accent-yellow); color: var(--primary-dark); }
 
         /* DASHBOARD LAYOUT */
-        #dashboard-wrapper { display: none; height: 100vh; flex-direction: column; }
-        #dashboard { display: flex; flex-grow: 1; overflow: hidden; }
+        #dashboard-wrapper { display: none; height: 100vh; flex-direction: column; width: 100%; }
+        #dashboard { display: flex; flex-grow: 1; overflow: hidden; width: 100%; }
         
         /* MOBILE HEADER */
         .mobile-header { display: none; background-color: var(--primary-dark); color: white; padding: 15px 20px; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--accent-yellow); }
@@ -42,7 +42,7 @@
         .overlay.active { display: block; }
 
         /* SIDEBAR */
-        .sidebar { width: 260px; background-color: var(--bg-white); display: flex; flex-direction: column; border-right: 2px solid var(--border-color); z-index: 999; }
+        .sidebar { width: 260px; background-color: var(--bg-white); display: flex; flex-direction: column; border-right: 2px solid var(--border-color); z-index: 999; flex-shrink: 0; }
         .sidebar-logo-container { text-align: center; padding: 25px 20px 10px 20px; }
         .sidebar-logo-container img { max-width: 120px; height: auto; }
         .sidebar h3 { text-align: center; padding-bottom: 15px; margin: 0 0 10px 0; border-bottom: 3px solid var(--accent-yellow); color: var(--primary-dark); font-weight: 800; font-size: 18px; }
@@ -51,26 +51,50 @@
         .sidebar button.active { background-color: var(--primary-dark); color: white; border-left: 6px solid var(--accent-yellow); }
         
         /* CONTENIDO PRINCIPAL */
-        .main-content { flex-grow: 1; padding: 30px; overflow-y: auto; background-color: var(--bg-white); }
+        .main-content { 
+            flex-grow: 1; 
+            padding: 30px; 
+            overflow-y: auto; 
+            background-color: var(--bg-white); 
+            min-width: 0; /* CRÍTICO para celulares */
+        }
         .section { display: none; }
         .section.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .section h2 { color: var(--primary-dark); border-bottom: 2px solid var(--accent-yellow); padding-bottom: 10px; display: inline-block; margin-top: 0; }
         
-        /* TABLAS: Diseño clásico con scroll horizontal para móviles */
-        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 20px; background-color: var(--bg-white); }
-        table { width: 100%; border-collapse: collapse; min-width: 650px; /* Obliga a la tabla a mantener su forma, activando el scroll en móviles */ }
-        th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; /* Evita que el texto se rompa hacia abajo */ }
+        /* TABLAS: Diseño clásico con scroll horizontal ESTRICTO */
+        .table-responsive { 
+            width: 100%; 
+            overflow-x: auto; 
+            -webkit-overflow-scrolling: touch; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color); 
+            background-color: var(--bg-white); 
+            margin-top: 20px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: block;
+        }
+        table { 
+            width: 100%; 
+            min-width: 650px; /* Fuerza la barra de desplazamiento en móvil */
+            border-collapse: collapse; 
+        }
+        th, td { 
+            padding: 15px; 
+            text-align: left; 
+            border-bottom: 1px solid var(--border-color); 
+            white-space: nowrap; /* Evita que el texto y los botones se amontonen */
+        }
         th { background-color: var(--primary-dark); color: white; font-weight: 600; border-bottom: 4px solid var(--accent-yellow); }
         tr:hover { background-color: var(--bg-light); }
         
-        /* FORMULARIOS */
+        /* FORMULARIOS Y CAJAS */
         .form-row { display: flex; gap: 15px; margin-bottom: 25px; align-items: flex-end; background: var(--bg-light); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-dark); }
         .form-row > div { flex: 1; min-width: 200px; }
         .form-row label { display: block; margin-bottom: 6px; font-weight: bold; color: var(--primary-dark); font-size: 14px; }
         .form-row input, .form-row select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 15px; }
         
-        /* BOTONES PEQUEÑOS */
         .btn-small { width: auto; padding: 8px 14px; font-size: 13px; margin-right: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; background-color: var(--primary-dark); color: white; }
         .btn-danger { background-color: #ef4444; color: white; }
         .btn-success { background-color: var(--primary-dark); border: 1px solid var(--accent-yellow); }
@@ -91,8 +115,6 @@
             .form-row button { margin-top: 10px; width: 100%; justify-content: center; }
             .grid-2 { grid-template-columns: 1fr; }
             .panel-box { padding: 15px; }
-            /* Nota: Eliminamos las configuraciones raras de tablas aquí.
-               Ahora .table-responsive se encarga de todo con scroll horizontal. */
         }
     </style>
 </head>
