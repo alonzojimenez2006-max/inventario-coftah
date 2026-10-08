@@ -63,13 +63,18 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .section h2 { color: var(--primary-dark); border-bottom: 2px solid var(--accent-yellow); padding-bottom: 10px; display: inline-block; margin-top: 0; }
         
+        /* BUSCADOR */
+        .search-container { margin: 15px 0; }
+        .search-input { width: 100%; max-width: 500px; padding: 12px 15px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; border-left: 4px solid var(--accent-yellow); outline: none; transition: border-color 0.3s; background-color: var(--bg-light); }
+        .search-input:focus { border-color: var(--primary-dark); background-color: var(--bg-white); }
+
         /* TABLAS Y RECUADROS PARA CELULARES */
         .table-responsive { 
             width: 100%; 
             overflow-x: auto; 
             -webkit-overflow-scrolling: touch; 
             background-color: var(--bg-white); 
-            margin-top: 20px; 
+            margin-top: 10px; 
             border: 2px solid var(--border-color); 
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
@@ -174,6 +179,11 @@
                 <div id="general" class="section active">
                     <h2>Inventario General</h2>
                     <p style="color: #64748b;">Visión global del stock físico en oficina y el material distribuido.</p>
+                    
+                    <div class="search-container">
+                        <input type="text" class="search-input" placeholder="🔍 Buscar producto en general..." onkeyup="filterTable('table-general', this.value)">
+                    </div>
+
                     <div class="table-responsive">
                         <table id="table-general">
                             <thead><tr><th>Producto</th><th>Stock en Oficina</th><th>Distribuido</th><th>Total Global</th></tr></thead>
@@ -190,6 +200,11 @@
                         <div><label>Cantidad Inicial</label><input type="number" id="new-item-qty" placeholder="0" min="0"></div>
                         <button class="btn-small btn-success" onclick="addOfficeItem()">+ Agregar al Catálogo</button>
                     </div>
+
+                    <div class="search-container">
+                        <input type="text" class="search-input" placeholder="🔍 Buscar producto en la oficina..." onkeyup="filterTable('table-oficina', this.value)">
+                    </div>
+
                     <div class="table-responsive">
                         <table id="table-oficina">
                             <thead><tr><th>Producto</th><th>Stock Actual</th><th>Ajustar Stock</th><th>Borrar</th></tr></thead>
@@ -207,6 +222,11 @@
                             <div><label>Cédula / ID</label><input type="text" id="new-fac-id" placeholder="Ej: V-12345678"></div>
                             <button class="btn-small btn-success" onclick="addFacilitator()">Registrar</button>
                         </div>
+                        
+                        <div class="search-container">
+                            <input type="text" class="search-input" placeholder="🔍 Buscar facilitador (Nombre o Cédula)..." onkeyup="filterTable('table-fac-list', this.value)">
+                        </div>
+
                         <div class="table-responsive">
                             <table id="table-fac-list">
                                 <thead><tr><th>Cédula</th><th>Nombre</th><th>Material Asignado</th><th>Acciones</th></tr></thead>
@@ -243,6 +263,11 @@
                             </div>
                         </div>
                         <h3 style="color: var(--primary-dark); margin-top: 30px;">Material en posesión</h3>
+                        
+                        <div class="search-container">
+                            <input type="text" class="search-input" placeholder="🔍 Buscar material asignado..." onkeyup="filterTable('table-fac-inventory', this.value)">
+                        </div>
+
                         <div class="table-responsive">
                             <table id="table-fac-inventory">
                                 <thead><tr><th>Producto</th><th>Cantidad</th><th>Acciones</th></tr></thead>
@@ -299,6 +324,24 @@
         let currentFacIndex = null; let dataLoaded = false;
 
         if(window.innerWidth > 800) { document.getElementById('desktop-logo').style.display = 'block'; document.getElementById('desktop-title').style.display = 'block'; }
+
+        /* ----- FUNCIÓN DEL BUSCADOR ----- */
+        function filterTable(tableId, term) {
+            const termLower = term.toLowerCase();
+            const table = document.getElementById(tableId);
+            const trs = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+            
+            for (let i = 0; i < trs.length; i++) {
+                // Obtenemos todo el texto de la fila actual
+                const textData = trs[i].textContent || trs[i].innerText;
+                if (textData.toLowerCase().indexOf(termLower) > -1) {
+                    trs[i].style.display = ""; // Si coincide, se muestra
+                } else {
+                    trs[i].style.display = "none"; // Si no coincide, se oculta
+                }
+            }
+        }
+        /* -------------------------------- */
 
         async function loadData() {
             try {
@@ -373,6 +416,14 @@
             document.querySelectorAll('.section, .nav-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(id).classList.add('active'); event.currentTarget.classList.add('active');
             if(id === 'facilitadores') closeFacDetail();
+            
+            // Limpiar todos los buscadores al cambiar de sección
+            document.querySelectorAll('.search-input').forEach(input => {
+                input.value = '';
+                // Disparar el evento keyup para que se muestren todos los datos de nuevo
+                input.dispatchEvent(new Event('keyup'));
+            });
+
             if (window.innerWidth <= 800) { document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobile-overlay').classList.remove('active'); }
             updateAllViews();
         }
@@ -389,69 +440,55 @@
             });
         }
 
-        /* ----- NUEVAS FUNCIONES CON ALERTAS (PROMPT) PARA AJUSTAR CANTIDADES ----- */
-
         function promptAdjustOffice(p, action) {
             const verb = action === 'add' ? 'sumar' : 'restar';
             const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}'?`, "1");
             
-            if (input === null || input.trim() === "") return; // Si cancela o deja en blanco
+            if (input === null || input.trim() === "") return;
             
             const qty = parseInt(input);
             if (isNaN(qty) || qty <= 0) {
-                alert("⚠️ Ingresa un número válido mayor a 0.");
-                return;
+                alert("⚠️ Ingresa un número válido mayor a 0."); return;
             }
             
             const amount = action === 'add' ? qty : -qty;
-            
             if (inventarioOficina[p] + amount < 0) {
-                alert("⚠️ No puedes restar más de lo que hay disponible en el stock de la oficina.");
-                return;
+                alert("⚠️ No puedes restar más de lo que hay disponible en el stock de la oficina."); return;
             }
             
             inventarioOficina[p] += amount;
-            saveData();
-            updateAllViews();
+            saveData(); updateAllViews();
         }
 
         function promptAdjustFacItem(p, action) {
             const verb = action === 'add' ? 'sumar' : 'restar';
             const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}' de este facilitador?`, "1");
             
-            if (input === null || input.trim() === "") return; // Si cancela o deja en blanco
+            if (input === null || input.trim() === "") return;
             
             const qty = parseInt(input);
             if (isNaN(qty) || qty <= 0) {
-                alert("⚠️ Ingresa un número válido mayor a 0.");
-                return;
+                alert("⚠️ Ingresa un número válido mayor a 0."); return;
             }
             
             const amount = action === 'add' ? qty : -qty;
             const f = facilitadores[currentFacIndex];
             
             if (f.inventario[p] + amount < 0) {
-                alert("⚠️ No puedes restar más de lo que el facilitador tiene en su poder.");
-                return;
+                alert("⚠️ No puedes restar más de lo que el facilitador tiene en su poder."); return;
             }
             
             f.inventario[p] += amount;
-            if (f.inventario[p] === 0) delete f.inventario[p]; // Si queda en 0, se elimina de su lista
+            if (f.inventario[p] === 0) delete f.inventario[p];
             
-            saveData();
-            updateAllViews();
+            saveData(); updateAllViews();
         }
-
-        /* -------------------------------------------------------------------------- */
 
         function renderOficina() {
             const tbody = document.querySelector('#table-oficina tbody'); tbody.innerHTML = '';
             for (let p in inventarioOficina) {
                 tbody.innerHTML += `<tr><td>${p}</td><td><strong>${inventarioOficina[p]}</strong></td>
-                    <td>
-                        <button class="btn-small" onclick="promptAdjustOffice('${p}', 'add')">➕ Sumar</button>
-                        <button class="btn-small btn-warning" onclick="promptAdjustOffice('${p}', 'sub')">➖ Restar</button>
-                    </td>
+                    <td><button class="btn-small" onclick="promptAdjustOffice('${p}', 'add')">➕ Sumar</button><button class="btn-small btn-warning" onclick="promptAdjustOffice('${p}', 'sub')">➖ Restar</button></td>
                     <td><button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button></td></tr>`;
             }
         }
@@ -488,11 +525,7 @@
             const tbody = document.querySelector('#table-fac-inventory tbody'); tbody.innerHTML = '';
             for (let p in f.inventario) {
                 tbody.innerHTML += `<tr><td>${p}</td><td><strong>${f.inventario[p]}</strong></td>
-                    <td>
-                        <button class="btn-small" onclick="promptAdjustFacItem('${p}', 'add')">➕ Sumar</button>
-                        <button class="btn-small btn-warning" onclick="promptAdjustFacItem('${p}', 'sub')">➖ Restar</button>
-                        <button class="btn-small btn-danger" onclick="returnToOffice('${p}')">Devolver Todo</button>
-                    </td></tr>`;
+                    <td><button class="btn-small" onclick="promptAdjustFacItem('${p}', 'add')">➕ Sumar</button><button class="btn-small btn-warning" onclick="promptAdjustFacItem('${p}', 'sub')">➖ Restar</button><button class="btn-small btn-danger" onclick="returnToOffice('${p}')">Devolver Todo</button></td></tr>`;
             }
         }
 
