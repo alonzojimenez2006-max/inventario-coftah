@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- Etiqueta crítica para que el celular no deforme la pantalla -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Panel de Inventario - Materiales</title>
     <style>
@@ -64,28 +63,28 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .section h2 { color: var(--primary-dark); border-bottom: 2px solid var(--accent-yellow); padding-bottom: 10px; display: inline-block; margin-top: 0; }
         
-        /* ================= SOLUCIÓN DE RECUADROS PARA CELULARES ================= */
+        /* TABLAS Y RECUADROS PARA CELULARES */
         .table-responsive { 
             width: 100%; 
-            overflow-x: auto; /* Fuerza la barra de desplazamiento horizontal */
+            overflow-x: auto; 
             -webkit-overflow-scrolling: touch; 
             background-color: var(--bg-white); 
             margin-top: 20px; 
-            border: 2px solid var(--border-color); /* Un borde más grueso para que se note el recuadro */
+            border: 2px solid var(--border-color); 
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             display: block;
         }
         table { 
             width: 100%; 
-            min-width: 700px; /* Al obligar a la tabla a medir 700px, el celular TIENE que crear el recuadro deslizable */
+            min-width: 700px; 
             border-collapse: collapse; 
         }
         th, td { 
             padding: 15px; 
             text-align: left; 
             border-bottom: 1px solid var(--border-color); 
-            white-space: nowrap; /* Evita que los botones o textos se aplasten */
+            white-space: nowrap; 
         }
         th { background-color: var(--primary-dark); color: white; font-weight: 600; border-bottom: 4px solid var(--accent-yellow); }
         tr:hover { background-color: var(--bg-light); }
@@ -109,7 +108,7 @@
         /* Status Bar */
         #sync-status { padding: 8px; text-align: center; font-size: 12px; font-weight: bold; background: #e2e8f0; color: #475569; border-radius: 4px; margin-bottom: 15px; display: none; }
 
-        /* ================= MEDIA QUERIES (CELULARES) ================= */
+        /* MEDIA QUERIES (CELULARES) */
         @media (max-width: 800px) {
             .mobile-header { display: flex; }
             .sidebar { position: fixed; left: -280px; height: 100%; transition: left 0.3s ease; }
@@ -301,27 +300,19 @@
 
         if(window.innerWidth > 800) { document.getElementById('desktop-logo').style.display = 'block'; document.getElementById('desktop-title').style.display = 'block'; }
 
-        // MODO BLINDADO: Carga primero desde la memoria del celular/PC
         async function loadData() {
             try {
                 document.getElementById('loading-msg').style.display = 'block';
-                
-                // 1. Rescatar datos locales por si falla el internet o la base de datos
                 const backupLocal = localStorage.getItem('coftah_datos_seguros');
                 if (backupLocal) {
                     const parsed = JSON.parse(backupLocal);
-                    inventarioOficina = parsed.oficina || {};
-                    facilitadores = parsed.facilitadores || [];
-                    papelera = parsed.papelera || { productos: {}, facilitadores: [] };
+                    inventarioOficina = parsed.oficina || {}; facilitadores = parsed.facilitadores || []; papelera = parsed.papelera || { productos: {}, facilitadores: [] };
                 }
-
-                // 2. Intentar traer los datos actualizados de la Base de Datos
                 const res = await fetch('/api/sync');
                 if(res.ok) {
                     const data = await res.json();
                     if(data && data.oficina) {
                         inventarioOficina = data.oficina; facilitadores = data.facilitadores; papelera = data.papelera;
-                        // Sobrescribir el backup con lo más nuevo de la nube
                         localStorage.setItem('coftah_datos_seguros', JSON.stringify({ oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera }));
                     }
                 }
@@ -329,22 +320,16 @@
                 console.error("Fallo de red. Usando memoria local.");
                 document.getElementById('sync-status').style.display = 'block';
                 document.getElementById('sync-status').innerText = '⚠️ Usando modo sin conexión (Los datos están a salvo en este dispositivo)';
-                document.getElementById('sync-status').style.background = '#fef08a';
-                document.getElementById('sync-status').style.color = '#854d0e';
+                document.getElementById('sync-status').style.background = '#fef08a'; document.getElementById('sync-status').style.color = '#854d0e';
             } finally {
                 dataLoaded = true; document.getElementById('loading-msg').style.display = 'none';
                 if (document.getElementById('dashboard-wrapper').style.display === 'flex') updateAllViews();
             }
         }
 
-        // MODO BLINDADO: Guarda en tu teléfono inmediatamente y luego en la nube
         async function saveData() {
             const dataToSave = { oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera };
-            
-            // 1. Guardar de forma ultra segura en la memoria del navegador
             localStorage.setItem('coftah_datos_seguros', JSON.stringify(dataToSave));
-            
-            // 2. Intentar guardar en la nube
             try {
                 const res = await fetch('/api/sync', {
                     method: 'POST',
@@ -352,14 +337,12 @@
                     body: JSON.stringify(dataToSave)
                 });
                 if(!res.ok) throw new Error("Base de datos no respondió");
-                
                 document.getElementById('sync-status').style.display = 'none';
             } catch (err) {
                 console.error("Error nube, pero está guardado local:", err);
                 document.getElementById('sync-status').style.display = 'block';
                 document.getElementById('sync-status').innerText = '⚠️ Error conectando a BD. Datos guardados temporalmente en este equipo.';
-                document.getElementById('sync-status').style.background = '#fecaca';
-                document.getElementById('sync-status').style.color = '#991b1b';
+                document.getElementById('sync-status').style.background = '#fecaca'; document.getElementById('sync-status').style.color = '#991b1b';
             }
         }
 
@@ -369,10 +352,8 @@
             if(!dataLoaded) { alert("Espera a cargar el sistema..."); return; }
             const u = document.getElementById('username').value.trim(); const p = document.getElementById('password').value.trim();
             if (u === sysCreds.user && p === sysCreds.pass) {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('dashboard-wrapper').style.display = 'flex';
-                document.getElementById('username').value = ''; document.getElementById('password').value = '';
-                updateAllViews();
+                document.getElementById('login-screen').style.display = 'none'; document.getElementById('dashboard-wrapper').style.display = 'flex';
+                document.getElementById('username').value = ''; document.getElementById('password').value = ''; updateAllViews();
             } else alert('Usuario o contraseña incorrectos');
         }
 
@@ -408,11 +389,69 @@
             });
         }
 
+        /* ----- NUEVAS FUNCIONES CON ALERTAS (PROMPT) PARA AJUSTAR CANTIDADES ----- */
+
+        function promptAdjustOffice(p, action) {
+            const verb = action === 'add' ? 'sumar' : 'restar';
+            const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}'?`, "1");
+            
+            if (input === null || input.trim() === "") return; // Si cancela o deja en blanco
+            
+            const qty = parseInt(input);
+            if (isNaN(qty) || qty <= 0) {
+                alert("⚠️ Ingresa un número válido mayor a 0.");
+                return;
+            }
+            
+            const amount = action === 'add' ? qty : -qty;
+            
+            if (inventarioOficina[p] + amount < 0) {
+                alert("⚠️ No puedes restar más de lo que hay disponible en el stock de la oficina.");
+                return;
+            }
+            
+            inventarioOficina[p] += amount;
+            saveData();
+            updateAllViews();
+        }
+
+        function promptAdjustFacItem(p, action) {
+            const verb = action === 'add' ? 'sumar' : 'restar';
+            const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}' de este facilitador?`, "1");
+            
+            if (input === null || input.trim() === "") return; // Si cancela o deja en blanco
+            
+            const qty = parseInt(input);
+            if (isNaN(qty) || qty <= 0) {
+                alert("⚠️ Ingresa un número válido mayor a 0.");
+                return;
+            }
+            
+            const amount = action === 'add' ? qty : -qty;
+            const f = facilitadores[currentFacIndex];
+            
+            if (f.inventario[p] + amount < 0) {
+                alert("⚠️ No puedes restar más de lo que el facilitador tiene en su poder.");
+                return;
+            }
+            
+            f.inventario[p] += amount;
+            if (f.inventario[p] === 0) delete f.inventario[p]; // Si queda en 0, se elimina de su lista
+            
+            saveData();
+            updateAllViews();
+        }
+
+        /* -------------------------------------------------------------------------- */
+
         function renderOficina() {
             const tbody = document.querySelector('#table-oficina tbody'); tbody.innerHTML = '';
             for (let p in inventarioOficina) {
                 tbody.innerHTML += `<tr><td>${p}</td><td><strong>${inventarioOficina[p]}</strong></td>
-                    <td><button class="btn-small" onclick="adjustOffice('${p}', 1)">+1</button><button class="btn-small btn-warning" onclick="adjustOffice('${p}', -1)">-1</button></td>
+                    <td>
+                        <button class="btn-small" onclick="promptAdjustOffice('${p}', 'add')">➕ Sumar</button>
+                        <button class="btn-small btn-warning" onclick="promptAdjustOffice('${p}', 'sub')">➖ Restar</button>
+                    </td>
                     <td><button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button></td></tr>`;
             }
         }
@@ -422,7 +461,6 @@
             if (n && inventarioOficina[n] === undefined) { inventarioOficina[n] = q; document.getElementById('new-item-name').value = ''; saveData(); updateAllViews(); }
         }
 
-        function adjustOffice(p, a) { if (inventarioOficina[p] + a >= 0) { inventarioOficina[p] += a; saveData(); updateAllViews(); } }
         function deleteOfficeItem(p) { if(confirm(`¿Enviar '${p}' a papelera?`)) { papelera.productos[p] = inventarioOficina[p]; delete inventarioOficina[p]; saveData(); updateAllViews(); } }
         function countTotalItems(inv) { return Object.values(inv).reduce((a, b) => a + b, 0); }
 
@@ -450,7 +488,11 @@
             const tbody = document.querySelector('#table-fac-inventory tbody'); tbody.innerHTML = '';
             for (let p in f.inventario) {
                 tbody.innerHTML += `<tr><td>${p}</td><td><strong>${f.inventario[p]}</strong></td>
-                    <td><button class="btn-small" onclick="adjustFacItem('${p}', 1)">+1</button><button class="btn-small btn-warning" onclick="adjustFacItem('${p}', -1)">-1</button><button class="btn-small btn-danger" onclick="returnToOffice('${p}')">Devolver</button></td></tr>`;
+                    <td>
+                        <button class="btn-small" onclick="promptAdjustFacItem('${p}', 'add')">➕ Sumar</button>
+                        <button class="btn-small btn-warning" onclick="promptAdjustFacItem('${p}', 'sub')">➖ Restar</button>
+                        <button class="btn-small btn-danger" onclick="returnToOffice('${p}')">Devolver Todo</button>
+                    </td></tr>`;
             }
         }
 
@@ -464,7 +506,6 @@
             if (p && q > 0) { if (inventarioOficina[p] === undefined) inventarioOficina[p] = 0; const f = facilitadores[currentFacIndex]; f.inventario[p] = (f.inventario[p] || 0) + q; saveData(); updateAllViews(); }
         }
 
-        function adjustFacItem(p, a) { const f = facilitadores[currentFacIndex]; if (f.inventario[p] + a >= 0) { f.inventario[p] += a; if (f.inventario[p] === 0) delete f.inventario[p]; saveData(); updateAllViews(); } }
         function returnToOffice(p) { const f = facilitadores[currentFacIndex]; if (f.inventario[p] > 0) { inventarioOficina[p] = (inventarioOficina[p] || 0) + f.inventario[p]; delete f.inventario[p]; saveData(); updateAllViews(); } }
 
         function renderPapelera() {
