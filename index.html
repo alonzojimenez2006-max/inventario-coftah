@@ -63,7 +63,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .section h2 { color: var(--primary-dark); border-bottom: 2px solid var(--accent-yellow); padding-bottom: 10px; display: inline-block; margin-top: 0; }
         
-        /* BUSCADOR */
+        /* BUSCADORES GENERALES */
         .search-container { margin: 15px 0; }
         .search-input { width: 100%; max-width: 500px; padding: 12px 15px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; border-left: 4px solid var(--accent-yellow); outline: none; transition: border-color 0.3s; background-color: var(--bg-light); }
         .search-input:focus { border-color: var(--primary-dark); background-color: var(--bg-white); }
@@ -98,7 +98,8 @@
         .form-row { display: flex; gap: 15px; margin-bottom: 25px; align-items: flex-end; background: var(--bg-light); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-dark); }
         .form-row > div { flex: 1; min-width: 200px; }
         .form-row label { display: block; margin-bottom: 6px; font-weight: bold; color: var(--primary-dark); font-size: 14px; }
-        .form-row input, .form-row select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 15px; }
+        .form-row input, .form-row select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 15px; outline: none; }
+        .form-row input:focus, .form-row select:focus { border-color: var(--primary-dark); }
         
         .btn-small { width: auto; padding: 8px 14px; font-size: 13px; margin-right: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; background-color: var(--primary-dark); color: white; }
         .btn-danger { background-color: #ef4444; color: white; }
@@ -239,17 +240,25 @@
                         <button class="btn-small btn-dark" onclick="closeFacDetail()" style="margin-bottom: 20px;">🔙 Volver a la lista</button>
                         <h2 id="fac-detail-title">Inventario de: </h2>
                         <div class="grid-2">
+                            
+                            <!-- PANEL: TRASLADAR DESDE OFICINA -->
                             <div class="panel-box">
                                 <h3>Trasladar material de Oficina</h3>
                                 <div style="margin-bottom: 10px;">
                                     <label style="font-size: 13px; font-weight: bold;">Producto de Oficina:</label>
-                                    <select id="fac-sel-producto" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></select>
+                                    
+                                    <!-- NUEVO BUSCADOR PARA EL MENÚ DESPLEGABLE -->
+                                    <input type="text" id="search-fac-prod" placeholder="🔍 Escribe para buscar producto..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 8px; outline: none;" onkeyup="renderSelectProductosOficina()">
+                                    
+                                    <select id="fac-sel-producto" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; outline: none;"></select>
                                 </div>
                                 <div style="display: flex; gap: 10px;">
                                     <input type="number" id="fac-transfer-qty" value="1" min="1" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                                     <button class="btn-small" onclick="transferFromOffice()" style="margin:0;">Trasladar</button>
                                 </div>
                             </div>
+                            
+                            <!-- PANEL: CREAR PRODUCTO DIRECTO -->
                             <div class="panel-box">
                                 <h3>Asignar Producto Nuevo (Directo)</h3>
                                 <div style="margin-bottom: 10px;">
@@ -262,6 +271,7 @@
                                 </div>
                             </div>
                         </div>
+                        
                         <h3 style="color: var(--primary-dark); margin-top: 30px;">Material en posesión</h3>
                         
                         <div class="search-container">
@@ -325,24 +335,44 @@
 
         if(window.innerWidth > 800) { document.getElementById('desktop-logo').style.display = 'block'; document.getElementById('desktop-title').style.display = 'block'; }
 
-        /* ----- FUNCIÓN DEL BUSCADOR ----- */
+        /* ----- FUNCIÓN DEL BUSCADOR DE TABLAS ----- */
         function filterTable(tableId, term) {
             const termLower = term.toLowerCase();
             const table = document.getElementById(tableId);
             const trs = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
             
             for (let i = 0; i < trs.length; i++) {
-                // Obtenemos todo el texto de la fila actual
                 const textData = trs[i].textContent || trs[i].innerText;
                 if (textData.toLowerCase().indexOf(termLower) > -1) {
-                    trs[i].style.display = ""; // Si coincide, se muestra
+                    trs[i].style.display = ""; 
                 } else {
-                    trs[i].style.display = "none"; // Si no coincide, se oculta
+                    trs[i].style.display = "none"; 
                 }
             }
         }
-        /* -------------------------------- */
 
+        /* ----- NUEVA FUNCIÓN: FILTRAR EL SELECT DE PRODUCTOS ----- */
+        function renderSelectProductosOficina() {
+            const term = document.getElementById('search-fac-prod').value.toLowerCase();
+            const sel = document.getElementById('fac-sel-producto');
+            sel.innerHTML = ''; // Limpia el menú
+            
+            let hasMatches = false;
+            for (let p in inventarioOficina) {
+                // Si el nombre del producto incluye lo que el usuario está escribiendo, lo mostramos
+                if (p.toLowerCase().includes(term)) {
+                    sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`;
+                    hasMatches = true;
+                }
+            }
+            
+            // Si escribió algo que no existe en el inventario
+            if (!hasMatches) {
+                sel.innerHTML = `<option value="">No hay coincidencias</option>`;
+            }
+        }
+
+        /* ----- CARGA Y GUARDADO DE DATOS ----- */
         async function loadData() {
             try {
                 document.getElementById('loading-msg').style.display = 'block';
@@ -417,11 +447,8 @@
             document.getElementById(id).classList.add('active'); event.currentTarget.classList.add('active');
             if(id === 'facilitadores') closeFacDetail();
             
-            // Limpiar todos los buscadores al cambiar de sección
             document.querySelectorAll('.search-input').forEach(input => {
-                input.value = '';
-                // Disparar el evento keyup para que se muestren todos los datos de nuevo
-                input.dispatchEvent(new Event('keyup'));
+                input.value = ''; input.dispatchEvent(new Event('keyup'));
             });
 
             if (window.innerWidth <= 800) { document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobile-overlay').classList.remove('active'); }
@@ -443,44 +470,32 @@
         function promptAdjustOffice(p, action) {
             const verb = action === 'add' ? 'sumar' : 'restar';
             const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}'?`, "1");
-            
             if (input === null || input.trim() === "") return;
             
             const qty = parseInt(input);
-            if (isNaN(qty) || qty <= 0) {
-                alert("⚠️ Ingresa un número válido mayor a 0."); return;
-            }
+            if (isNaN(qty) || qty <= 0) { alert("⚠️ Ingresa un número válido mayor a 0."); return; }
             
             const amount = action === 'add' ? qty : -qty;
-            if (inventarioOficina[p] + amount < 0) {
-                alert("⚠️ No puedes restar más de lo que hay disponible en el stock de la oficina."); return;
-            }
+            if (inventarioOficina[p] + amount < 0) { alert("⚠️ No puedes restar más de lo que hay disponible en el stock de la oficina."); return; }
             
-            inventarioOficina[p] += amount;
-            saveData(); updateAllViews();
+            inventarioOficina[p] += amount; saveData(); updateAllViews();
         }
 
         function promptAdjustFacItem(p, action) {
             const verb = action === 'add' ? 'sumar' : 'restar';
             const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}' de este facilitador?`, "1");
-            
             if (input === null || input.trim() === "") return;
             
             const qty = parseInt(input);
-            if (isNaN(qty) || qty <= 0) {
-                alert("⚠️ Ingresa un número válido mayor a 0."); return;
-            }
+            if (isNaN(qty) || qty <= 0) { alert("⚠️ Ingresa un número válido mayor a 0."); return; }
             
             const amount = action === 'add' ? qty : -qty;
             const f = facilitadores[currentFacIndex];
             
-            if (f.inventario[p] + amount < 0) {
-                alert("⚠️ No puedes restar más de lo que el facilitador tiene en su poder."); return;
-            }
+            if (f.inventario[p] + amount < 0) { alert("⚠️ No puedes restar más de lo que el facilitador tiene en su poder."); return; }
             
             f.inventario[p] += amount;
             if (f.inventario[p] === 0) delete f.inventario[p];
-            
             saveData(); updateAllViews();
         }
 
@@ -515,13 +530,24 @@
         }
 
         function deleteFacilitator(i) { if(confirm('¿Enviar facilitador a papelera?')) { papelera.facilitadores.push(facilitadores.splice(i, 1)[0]); saveData(); updateAllViews(); } }
-        function openFacDetail(i) { currentFacIndex = i; document.getElementById('view-fac-list').style.display = 'none'; document.getElementById('view-fac-detail').style.display = 'block'; renderFacilitatorDetail(); }
+        
+        function openFacDetail(i) { 
+            currentFacIndex = i; 
+            document.getElementById('view-fac-list').style.display = 'none'; 
+            document.getElementById('view-fac-detail').style.display = 'block'; 
+            renderFacilitatorDetail(); 
+        }
+        
         function closeFacDetail() { currentFacIndex = null; document.getElementById('view-fac-list').style.display = 'block'; document.getElementById('view-fac-detail').style.display = 'none'; }
 
         function renderFacilitatorDetail() {
-            const f = facilitadores[currentFacIndex]; document.getElementById('fac-detail-title').innerText = `Inventario de: ${f.nombre}`;
-            const sel = document.getElementById('fac-sel-producto'); sel.innerHTML = '';
-            for (let p in inventarioOficina) sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`;
+            const f = facilitadores[currentFacIndex]; 
+            document.getElementById('fac-detail-title').innerText = `Inventario de: ${f.nombre}`;
+            
+            // Limpiar buscador y renderizar las opciones del select
+            document.getElementById('search-fac-prod').value = '';
+            renderSelectProductosOficina();
+            
             const tbody = document.querySelector('#table-fac-inventory tbody'); tbody.innerHTML = '';
             for (let p in f.inventario) {
                 tbody.innerHTML += `<tr><td>${p}</td><td><strong>${f.inventario[p]}</strong></td>
