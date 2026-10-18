@@ -123,7 +123,7 @@
                 <input type="password" id="password" placeholder="Tu contraseña">
             </div>
             <button onclick="login()">Ingresar</button>
-            <p id="loading-msg" style="display:none; text-align:center; font-size:13px; color:var(--primary-dark); font-weight: bold; margin-top: 15px;">Conectando a la base de datos...</p>
+            <p id="loading-msg" style="display:none; text-align:center; font-size:13px; color:var(--primary-dark); font-weight: bold; margin-top: 15px;">Sincronizando datos...</p>
         </div>
     </div>
 
@@ -195,7 +195,7 @@
                     </div>
                 </div>
 
-                <!-- CREAR CAJA (NUEVO) -->
+                <!-- CREAR CAJA -->
                 <div id="cajas" class="section">
                     <h2>📦 Crear Caja (Despacho)</h2>
                     <p style="color: #64748b;">Prepara una caja de materiales. Al generarla, el stock se descontará automáticamente.</p>
@@ -211,7 +211,6 @@
                     </div>
 
                     <div class="grid-2">
-                        <!-- Buscador de productos para la caja -->
                         <div class="panel-box">
                             <h3 style="margin-top: 0; color: var(--primary-dark);">1. Buscar Producto</h3>
                             <input type="text" id="caja-search-input" class="search-input" placeholder="🔍 Buscar en inventario..." onkeyup="renderCajaSearchList()" style="max-width: 100%; margin-bottom:10px;">
@@ -223,7 +222,6 @@
                             </div>
                         </div>
                         
-                        <!-- Carrito de la caja -->
                         <div class="panel-box" style="border-top: 4px solid var(--accent-yellow);">
                             <h3 style="margin-top: 0; color: var(--primary-dark);">2. Contenido de la Caja</h3>
                             <div class="table-responsive" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;">
@@ -237,7 +235,7 @@
                     </div>
                 </div>
 
-                <!-- MOVIMIENTOS (NUEVO) -->
+                <!-- MOVIMIENTOS -->
                 <div id="movimientos" class="section">
                     <h2>📜 Historial de Movimientos</h2>
                     <p style="color: #64748b;">Registro de auditoría. Todas las cajas y ajustes manuales quedan registrados aquí.</p>
@@ -271,7 +269,7 @@
                             </table>
                         </div>
                     </div>
-                    <!-- DETALLE FACILITADOR (Oculto inicialmente) -->
+                    <!-- DETALLE FACILITADOR -->
                     <div id="view-fac-detail" style="display: none;">
                         <button class="btn-small btn-dark" onclick="closeFacDetail()" style="margin-bottom: 20px;">🔙 Volver a la lista</button>
                         <h2 id="fac-detail-title">Inventario de: </h2>
@@ -324,7 +322,7 @@
                     </div>
                 </div>
 
-                <!-- PANEL ADMIN (NUEVO) -->
+                <!-- PANEL ADMIN -->
                 <div id="adminpanel" class="section admin-only">
                     <h2>⚙️ Panel de Administración</h2>
                     <p style="color: #64748b;">Crea y administra los accesos de tus empleados.</p>
@@ -372,21 +370,26 @@
     </div>
 
     <script>
-        // VARIABLES GLOBALES
+        // VARIABLES GLOBALES - Eliminamos el bloqueo forzando a que siempre permita loguear.
         let inventarioOficina = {}; let facilitadores = []; let papelera = { productos: {}, facilitadores: [] };
         let movimientos = []; let usuarios = []; 
-        let currentUser = null; let currentFacIndex = null; let dataLoaded = false;
-        let carritoCaja = {}; // Guarda lo temporal de la caja
+        let currentUser = null; let currentFacIndex = null;
+        let carritoCaja = {}; 
 
-        if(window.innerWidth > 800) { document.getElementById('desktop-logo').style.display = 'block'; document.getElementById('desktop-title').style.display = 'block'; }
+        if(window.innerWidth > 800) { 
+            const dLogo = document.getElementById('desktop-logo');
+            const dTitle = document.getElementById('desktop-title');
+            if (dLogo) dLogo.style.display = 'block'; 
+            if (dTitle) dTitle.style.display = 'block'; 
+        }
         
-        // Asignar fecha de hoy al formulario de caja
         document.getElementById('caja-fecha').valueAsDate = new Date();
 
         /* ----- BUSCADOR DE TABLAS ----- */
         function filterTable(tableId, term) {
             const termLower = term.toLowerCase();
             const table = document.getElementById(tableId);
+            if (!table) return;
             const trs = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
             for (let i = 0; i < trs.length; i++) {
                 const textData = trs[i].textContent || trs[i].innerText;
@@ -394,23 +397,42 @@
             }
         }
 
-        /* ----- CARGA Y GUARDADO ----- */
+        /* ----- CARGA INMEDIATA Y SINCRONIZACIÓN SILENCIOSA ----- */
         async function loadData() {
+            // 1. Intentar cargar los datos locales de la computadora DE INMEDIATO
             try {
-                document.getElementById('loading-msg').style.display = 'block';
                 const backupLocal = localStorage.getItem('coftah_datos_seguros');
                 if (backupLocal) {
                     const p = JSON.parse(backupLocal);
-                    inventarioOficina = p.oficina || {}; facilitadores = p.facilitadores || []; papelera = p.papelera || { productos: {}, facilitadores: [] };
-                    movimientos = p.movimientos || []; usuarios = p.usuarios || [];
+                    inventarioOficina = p.oficina || {}; 
+                    facilitadores = p.facilitadores || []; 
+                    papelera = p.papelera || { productos: {}, facilitadores: [] };
+                    movimientos = p.movimientos || []; 
+                    usuarios = p.usuarios || [];
                 }
+            } catch(e) { console.error("Error leyendo caché local."); }
+
+            // 2. Conectar a Neon silenciosamente en segundo plano
+            try {
+                document.getElementById('loading-msg').style.display = 'block';
                 const res = await fetch('/api/sync');
                 if(res.ok) {
                     const data = await res.json();
                     if(data && data.usuarios) {
-                        inventarioOficina = data.oficina; facilitadores = data.facilitadores; papelera = data.papelera;
-                        movimientos = data.movimientos; usuarios = data.usuarios;
-                        localStorage.setItem('coftah_datos_seguros', JSON.stringify({ oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera, movimientos: movimientos, usuarios: usuarios }));
+                        inventarioOficina = data.oficina || {}; 
+                        facilitadores = data.facilitadores || []; 
+                        papelera = data.papelera || { productos: {}, facilitadores: [] };
+                        movimientos = data.movimientos || []; 
+                        usuarios = data.usuarios || [];
+                        localStorage.setItem('coftah_datos_seguros', JSON.stringify({ 
+                            oficina: inventarioOficina, facilitadores: facilitadores, 
+                            papelera: papelera, movimientos: movimientos, usuarios: usuarios 
+                        }));
+                        
+                        // Si el usuario ya entró al sistema, actualizar la pantalla con los nuevos datos
+                        if (document.getElementById('dashboard-wrapper').style.display === 'flex') {
+                            updateAllViews();
+                        }
                     }
                 }
             } catch (err) {
@@ -418,8 +440,7 @@
                 document.getElementById('sync-status').style.display = 'block';
                 document.getElementById('sync-status').innerText = '⚠️ Modo sin conexión (Datos a salvo localmente)';
             } finally {
-                dataLoaded = true; document.getElementById('loading-msg').style.display = 'none';
-                if (document.getElementById('dashboard-wrapper').style.display === 'flex') updateAllViews();
+                document.getElementById('loading-msg').style.display = 'none';
             }
         }
 
@@ -437,15 +458,13 @@
             }
         }
 
-        loadData();
-
-        /* ----- LOGIN Y ROLES ----- */
+        /* ----- LOGIN SIN RESTRICCIONES DE CARGA ----- */
         function login() {
-            if(!dataLoaded) { alert("Espera a cargar el sistema..."); return; }
-            const u = document.getElementById('username').value.trim(); const p = document.getElementById('password').value.trim();
+            const u = document.getElementById('username').value.trim(); 
+            const p = document.getElementById('password').value.trim();
             
-            // Validar contra la BD
             const validUser = usuarios.find(user => user.user === u && user.pass === p);
+            
             if (validUser) {
                 currentUser = validUser;
                 document.getElementById('lbl-current-user').innerText = currentUser.user;
@@ -458,10 +477,16 @@
                 applyRoles();
                 updateAllViews();
             } else {
-                // Fallback para admin maestro si la bd está vacía (por seguridad)
+                // Puerta trasera de emergencia si la BD está vacía o el internet falla
                 if(u === 'admin' && p === '123') {
                     currentUser = {user: 'admin', rol: 'admin'};
-                    applyRoles(); document.getElementById('login-screen').style.display = 'none'; document.getElementById('dashboard-wrapper').style.display = 'flex'; updateAllViews();
+                    document.getElementById('lbl-current-user').innerText = 'Administrador Maestro';
+                    document.getElementById('lbl-current-rol').innerText = 'ADMIN';
+                    
+                    applyRoles(); 
+                    document.getElementById('login-screen').style.display = 'none'; 
+                    document.getElementById('dashboard-wrapper').style.display = 'flex'; 
+                    updateAllViews();
                 } else {
                     alert('Usuario o contraseña incorrectos');
                 }
@@ -471,7 +496,6 @@
         function logout() { currentUser = null; document.getElementById('dashboard-wrapper').style.display = 'none'; document.getElementById('login-screen').style.display = 'flex'; }
         
         function applyRoles() {
-            // Oculta o muestra elementos que tengan la clase 'admin-only'
             const adminElements = document.querySelectorAll('.admin-only');
             if (currentUser.rol === 'operador') {
                 adminElements.forEach(el => el.style.display = 'none');
@@ -531,7 +555,6 @@
         function renderOficina() {
             const tbody = document.querySelector('#table-oficina tbody'); tbody.innerHTML = '';
             for (let p in inventarioOficina) {
-                // Operador solo ve botón de restar. Admin ve sumar y restar.
                 let btnSumar = currentUser.rol === 'admin' ? `<button class="btn-small" onclick="promptAdjustOffice('${p}', 'add')">➕ Sumar</button>` : '';
                 let btnBorrar = currentUser.rol === 'admin' ? `<td><button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button></td>` : '';
                 
@@ -555,14 +578,11 @@
             if (inventarioOficina[p] + amount < 0) { alert("⚠️ Stock insuficiente."); return; }
             
             inventarioOficina[p] += amount;
-            
-            // REGISTRO DE AUDITORIA
             movimientos.unshift({
                 tipo: 'ajuste', codigo: 'AJUSTE', facilitador: '-',
                 fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-',
                 operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}'`
             });
-            
             saveData(); updateAllViews();
         }
 
@@ -583,14 +603,11 @@
             if (!input || input.trim() === "") return;
             const qty = parseInt(input);
             if (isNaN(qty) || qty <= 0) { alert("Número inválido."); return; }
-            
-            // Sumar lo que ya esté en el carrito para verificar stock total disponible
             const inCart = carritoCaja[p] || 0;
             if ((inCart + qty) > inventarioOficina[p]) { alert("⚠️ No hay suficiente stock en oficina para añadir esa cantidad."); return; }
             
             carritoCaja[p] = inCart + qty;
             renderCajaCart();
-            // Limpiar buscador para facilitar
             document.getElementById('caja-search-input').value = ''; renderCajaSearchList();
         }
 
@@ -615,28 +632,16 @@
 
             if (Object.keys(carritoCaja).length === 0) { alert("⚠️ La caja está vacía. Añade productos primero."); return; }
             
-            // Descontar del inventario real
-            for (let p in carritoCaja) {
-                inventarioOficina[p] -= carritoCaja[p];
-            }
+            for (let p in carritoCaja) inventarioOficina[p] -= carritoCaja[p];
 
-            // Crear el código CAJ-XXX
             const cajasCount = movimientos.filter(m => m.tipo === 'caja').length + 1;
             const codCaja = 'CAJ-' + String(cajasCount).padStart(3, '0');
 
-            // Guardar registro
             movimientos.unshift({
-                tipo: 'caja',
-                codigo: codCaja,
-                facilitador: fac,
-                fecha: fec,
-                lugar: lug,
-                accion: acc,
-                operador: currentUser.user,
-                contenido: { ...carritoCaja }
+                tipo: 'caja', codigo: codCaja, facilitador: fac, fecha: fec, lugar: lug, accion: acc,
+                operador: currentUser.user, contenido: { ...carritoCaja }
             });
 
-            // Limpiar todo
             carritoCaja = {};
             document.getElementById('caja-fac').value = ''; document.getElementById('caja-lugar').value = ''; document.getElementById('caja-accion').value = '';
             
@@ -648,19 +653,13 @@
         function renderMovimientos() {
             const tbody = document.querySelector('#table-movimientos tbody'); tbody.innerHTML = '';
             movimientos.forEach((m, i) => {
-                let btnDetalle = '';
-                if(m.tipo === 'caja') {
-                    btnDetalle = `<button class="btn-small btn-info" onclick='openModal(${i})'>📦 Ver Contenido</button>`;
-                } else {
-                    btnDetalle = `<span style="font-size:13px; color:#64748b;">${m.detalle}</span>`;
-                }
+                let btnDetalle = m.tipo === 'caja' 
+                    ? `<button class="btn-small btn-info" onclick='openModal(${i})'>📦 Ver Contenido</button>` 
+                    : `<span style="font-size:13px; color:#64748b;">${m.detalle}</span>`;
 
                 tbody.innerHTML += `<tr>
-                    <td><strong>${m.codigo}</strong></td>
-                    <td>${m.facilitador}</td>
-                    <td>${m.fecha}</td>
-                    <td>${m.lugar}</td>
-                    <td>${m.accion}</td>
+                    <td><strong>${m.codigo}</strong></td><td>${m.facilitador}</td><td>${m.fecha}</td>
+                    <td>${m.lugar}</td><td>${m.accion}</td>
                     <td><span class="badge" style="background:#e2e8f0; color:var(--primary-dark)">${m.operador}</span></td>
                     <td>${btnDetalle}</td>
                 </tr>`;
@@ -671,10 +670,7 @@
             const mov = movimientos[index];
             document.getElementById('modal-caja-title').innerText = `Contenido: ${mov.codigo} (${mov.facilitador})`;
             const tbody = document.querySelector('#table-modal-content tbody'); tbody.innerHTML = '';
-            
-            for (let p in mov.contenido) {
-                tbody.innerHTML += `<tr><td><strong>${p}</strong></td><td><span class="badge">${mov.contenido[p]} Unds.</span></td></tr>`;
-            }
+            for (let p in mov.contenido) tbody.innerHTML += `<tr><td><strong>${p}</strong></td><td><span class="badge">${mov.contenido[p]} Unds.</span></td></tr>`;
             document.getElementById('modal-caja').classList.add('active');
         }
         function closeModal() { document.getElementById('modal-caja').classList.remove('active'); }
@@ -730,8 +726,6 @@
             if (f.inventario[p] + amount < 0) { alert("⚠️ No puedes restar más de lo que tiene."); return; }
             
             f.inventario[p] += amount; if (f.inventario[p] === 0) delete f.inventario[p];
-            
-            // Auditoría
             movimientos.unshift({ tipo: 'ajuste', codigo: 'AJUSTE', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}' a facilitador` });
             saveData(); updateAllViews();
         }
@@ -751,6 +745,9 @@
         function hardDeleteProduct(p) { if(confirm('¿Eliminar permanente?')) { delete papelera.productos[p]; saveData(); updateAllViews(); } }
         function restoreFacilitator(i) { facilitadores.push(papelera.facilitadores.splice(i, 1)[0]); saveData(); updateAllViews(); }
         function hardDeleteFacilitator(i) { if(confirm('¿Eliminar permanente?')) { papelera.facilitadores.splice(i, 1); saveData(); updateAllViews(); } }
+
+        // INICIAR EL SISTEMA INMEDIATAMENTE
+        setTimeout(loadData, 50);
     </script>
 </body>
 </html>
