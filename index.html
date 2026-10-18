@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Panel de Inventario - Materiales</title>
+    <title>Sistema WMS - Gestión de Almacén</title>
     <style>
         :root {
             --primary-dark: #002855;
@@ -24,20 +24,18 @@
         .login-box h2 { margin-top: 0; text-align: center; color: var(--primary-dark); font-size: 22px; }
         .input-group { margin-bottom: 20px; }
         .input-group label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: bold; color: var(--primary-dark); }
-        .input-group input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 16px; }
+        .input-group input, .input-group select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 16px; background-color: #fff; }
         
         button { width: 100%; padding: 12px; background-color: var(--primary-dark); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; transition: all 0.3s; }
         button:hover { background-color: var(--accent-yellow); color: var(--primary-dark); }
 
-        /* DASHBOARD LAYOUT */
+        /* DASHBOARD */
         #dashboard-wrapper { display: none; height: 100vh; flex-direction: column; width: 100%; }
         #dashboard { display: flex; flex-grow: 1; overflow: hidden; width: 100%; }
         
-        /* MOBILE HEADER */
+        /* MOBILE HEADER & OVERLAY */
         .mobile-header { display: none; background-color: var(--primary-dark); color: white; padding: 15px 20px; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--accent-yellow); }
         .menu-btn { background: none; border: none; color: white; font-size: 26px; cursor: pointer; padding: 0; width: auto; }
-        
-        /* OVERLAY */
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,40,85,0.6); z-index: 998; }
         .overlay.active { display: block; }
 
@@ -50,102 +48,86 @@
         .sidebar button:hover { background-color: var(--bg-light); color: var(--primary-dark); padding-left: 25px; }
         .sidebar button.active { background-color: var(--primary-dark); color: white; border-left: 6px solid var(--accent-yellow); }
         
-        /* CONTENIDO PRINCIPAL */
-        .main-content { 
-            flex-grow: 1; 
-            padding: 30px; 
-            overflow-y: auto; 
-            background-color: var(--bg-white); 
-            min-width: 0; 
-        }
+        .user-badge { padding: 10px 20px; background: var(--bg-light); text-align: center; font-size: 13px; font-weight: bold; color: var(--primary-dark); border-bottom: 2px solid var(--border-color); }
+
+        /* MAIN CONTENT */
+        .main-content { flex-grow: 1; padding: 30px; overflow-y: auto; background-color: var(--bg-white); min-width: 0; }
         .section { display: none; }
         .section.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .section h2 { color: var(--primary-dark); border-bottom: 2px solid var(--accent-yellow); padding-bottom: 10px; display: inline-block; margin-top: 0; }
         
-        /* BUSCADORES GENERALES */
+        /* BUSCADORES */
         .search-container { margin: 15px 0; }
-        .search-input { width: 100%; max-width: 500px; padding: 12px 15px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; border-left: 4px solid var(--accent-yellow); outline: none; transition: border-color 0.3s; background-color: var(--bg-light); }
+        .search-input { width: 100%; max-width: 500px; padding: 12px 15px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; border-left: 4px solid var(--accent-yellow); outline: none; background-color: var(--bg-light); }
         .search-input:focus { border-color: var(--primary-dark); background-color: var(--bg-white); }
 
-        /* TABLAS Y RECUADROS PARA CELULARES */
-        .table-responsive { 
-            width: 100%; 
-            overflow-x: auto; 
-            -webkit-overflow-scrolling: touch; 
-            background-color: var(--bg-white); 
-            margin-top: 10px; 
-            border: 2px solid var(--border-color); 
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            display: block;
-        }
-        table { 
-            width: 100%; 
-            min-width: 700px; 
-            border-collapse: collapse; 
-        }
-        th, td { 
-            padding: 15px; 
-            text-align: left; 
-            border-bottom: 1px solid var(--border-color); 
-            white-space: nowrap; 
-        }
+        /* TABLAS CELULARES */
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; background-color: var(--bg-white); margin-top: 10px; border: 2px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: block; }
+        table { width: 100%; min-width: 700px; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
         th { background-color: var(--primary-dark); color: white; font-weight: 600; border-bottom: 4px solid var(--accent-yellow); }
         tr:hover { background-color: var(--bg-light); }
         
         /* FORMULARIOS Y CAJAS */
-        .form-row { display: flex; gap: 15px; margin-bottom: 25px; align-items: flex-end; background: var(--bg-light); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-dark); }
+        .form-row { display: flex; gap: 15px; margin-bottom: 25px; align-items: flex-end; background: var(--bg-light); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-dark); flex-wrap: wrap; }
         .form-row > div { flex: 1; min-width: 200px; }
         .form-row label { display: block; margin-bottom: 6px; font-weight: bold; color: var(--primary-dark); font-size: 14px; }
         .form-row input, .form-row select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 15px; outline: none; }
-        .form-row input:focus, .form-row select:focus { border-color: var(--primary-dark); }
         
         .btn-small { width: auto; padding: 8px 14px; font-size: 13px; margin-right: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; background-color: var(--primary-dark); color: white; }
         .btn-danger { background-color: #ef4444; color: white; }
         .btn-success { background-color: var(--primary-dark); border: 1px solid var(--accent-yellow); }
         .btn-warning { background-color: var(--accent-yellow); color: var(--primary-dark); }
-        .btn-dark { background-color: var(--bg-light); color: var(--primary-dark); border: 1px solid var(--border-color); }
+        .btn-info { background-color: #0284c7; color: white; }
         .badge { background: var(--accent-yellow); color: var(--primary-dark); padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
         .panel-box { background: var(--bg-white); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); border-top: 4px solid var(--primary-dark); box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
         
-        /* Status Bar */
         #sync-status { padding: 8px; text-align: center; font-size: 12px; font-weight: bold; background: #e2e8f0; color: #475569; border-radius: 4px; margin-bottom: 15px; display: none; }
 
-        /* MEDIA QUERIES (CELULARES) */
+        /* MODAL CAJA CONTENT */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: #fff; padding: 25px; border-radius: 8px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; border-top: 5px solid var(--primary-dark); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid var(--accent-yellow); padding-bottom: 10px; }
+        .modal-header h3 { margin: 0; color: var(--primary-dark); }
+        .close-btn { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; width: auto; }
+
+        /* MEDIA QUERIES */
         @media (max-width: 800px) {
             .mobile-header { display: flex; }
             .sidebar { position: fixed; left: -280px; height: 100%; transition: left 0.3s ease; }
             .sidebar.open { left: 0; }
             .main-content { padding: 15px; padding-bottom: 50px; }
+            .grid-2, .grid-4 { grid-template-columns: 1fr; }
             .form-row { flex-direction: column; align-items: stretch; }
-            .form-row button { margin-top: 10px; width: 100%; justify-content: center; }
-            .grid-2 { grid-template-columns: 1fr; }
-            .panel-box { padding: 15px; }
+            .form-row button { margin-top: 10px; width: 100%; }
         }
     </style>
 </head>
 <body>
 
+    <!-- LOGIN -->
     <div id="login-screen">
         <div class="login-box">
             <img src="CURSO_H2S_Capitulo_1.ppt-removebg-preview.png" alt="Logo">
             <h2>Acceso al Sistema</h2>
             <div class="input-group">
                 <label>Usuario</label>
-                <input type="text" id="username" placeholder="Ingresa tu usuario">
+                <input type="text" id="username" placeholder="Tu usuario">
             </div>
             <div class="input-group">
                 <label>Contraseña</label>
-                <input type="password" id="password" placeholder="Ingresa tu contraseña">
+                <input type="password" id="password" placeholder="Tu contraseña">
             </div>
-            <button id="btn-login" onclick="login()">Ingresar</button>
-            <p id="loading-msg" style="display:none; text-align:center; font-size:13px; color:var(--primary-dark); font-weight: bold; margin-top: 15px;">Conectando al sistema...</p>
+            <button onclick="login()">Ingresar</button>
+            <p id="loading-msg" style="display:none; text-align:center; font-size:13px; color:var(--primary-dark); font-weight: bold; margin-top: 15px;">Conectando a la base de datos...</p>
         </div>
     </div>
 
+    <!-- DASHBOARD -->
     <div id="dashboard-wrapper">
         <div class="mobile-header">
             <img src="CURSO_H2S_Capitulo_1.ppt-removebg-preview.png" alt="Logo" style="height: 40px; filter: brightness(0) invert(1);">
@@ -160,31 +142,32 @@
                 <div class="sidebar-logo-container" style="display: none;" id="desktop-logo">
                     <img src="CURSO_H2S_Capitulo_1.ppt-removebg-preview.png" alt="Logo Institucional">
                 </div>
-                <h3 id="desktop-title" style="display: none;">Gestión de Almacén</h3>
+                <div class="user-badge">👤 <span id="lbl-current-user">Usuario</span> (<span id="lbl-current-rol">Rol</span>)</div>
                 
                 <button class="nav-btn active" onclick="showSection('general')">📊 Resumen General</button>
                 <button class="nav-btn" onclick="showSection('oficina')">🏢 Inventario Oficina</button>
+                <button class="nav-btn" onclick="showSection('cajas')">📦 Crear Caja</button>
                 <button class="nav-btn" onclick="showSection('facilitadores')">👥 Facilitadores</button>
-                <button class="nav-btn" onclick="showSection('papelera')">🗑️ Papelera</button>
+                <button class="nav-btn" onclick="showSection('movimientos')">📜 Movimientos</button>
+                
+                <button class="nav-btn admin-only" onclick="showSection('papelera')">🗑️ Papelera</button>
                 
                 <div style="margin-top: auto;">
-                    <button class="nav-btn" onclick="showSection('configuracion')" style="border-top: 1px solid var(--border-color);">⚙️ Configuración</button>
+                    <button class="nav-btn admin-only" onclick="showSection('adminpanel')" style="border-top: 1px solid var(--border-color);">⚙️ Panel Admin</button>
                     <button class="nav-btn" onclick="logout()" style="color: #ef4444; font-weight: bold;">🚪 Cerrar Sesión</button>
                 </div>
             </div>
 
             <div class="main-content">
-                <div id="sync-status">Guardado localmente. Intentando conectar con base de datos...</div>
+                <div id="sync-status">Guardado localmente. Intentando conectar...</div>
                 
                 <!-- INVENTARIO GENERAL -->
                 <div id="general" class="section active">
                     <h2>Inventario General</h2>
                     <p style="color: #64748b;">Visión global del stock físico en oficina y el material distribuido.</p>
-                    
                     <div class="search-container">
-                        <input type="text" class="search-input" placeholder="🔍 Buscar producto en general..." onkeyup="filterTable('table-general', this.value)">
+                        <input type="text" class="search-input" placeholder="🔍 Buscar producto..." onkeyup="filterTable('table-general', this.value)">
                     </div>
-
                     <div class="table-responsive">
                         <table id="table-general">
                             <thead><tr><th>Producto</th><th>Stock en Oficina</th><th>Distribuido</th><th>Total Global</th></tr></thead>
@@ -196,19 +179,74 @@
                 <!-- INVENTARIO OFICINA -->
                 <div id="oficina" class="section">
                     <h2>Inventario Oficina</h2>
-                    <div class="form-row">
+                    <div class="form-row admin-only">
                         <div><label>Nuevo Producto</label><input type="text" id="new-item-name" placeholder="Ej: Libretas"></div>
                         <div><label>Cantidad Inicial</label><input type="number" id="new-item-qty" placeholder="0" min="0"></div>
                         <button class="btn-small btn-success" onclick="addOfficeItem()">+ Agregar al Catálogo</button>
                     </div>
-
                     <div class="search-container">
                         <input type="text" class="search-input" placeholder="🔍 Buscar producto en la oficina..." onkeyup="filterTable('table-oficina', this.value)">
                     </div>
-
                     <div class="table-responsive">
                         <table id="table-oficina">
-                            <thead><tr><th>Producto</th><th>Stock Actual</th><th>Ajustar Stock</th><th>Borrar</th></tr></thead>
+                            <thead><tr><th>Producto</th><th>Stock Actual</th><th>Ajustar Stock</th><th class="admin-only">Borrar</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- CREAR CAJA (NUEVO) -->
+                <div id="cajas" class="section">
+                    <h2>📦 Crear Caja (Despacho)</h2>
+                    <p style="color: #64748b;">Prepara una caja de materiales. Al generarla, el stock se descontará automáticamente.</p>
+                    
+                    <div class="panel-box" style="margin-bottom: 20px;">
+                        <h3 style="margin-top: 0; color: var(--primary-dark);">Datos de Logística</h3>
+                        <div class="grid-4">
+                            <div><label style="font-weight:bold; font-size:13px;">Facilitador / Destino</label><input type="text" id="caja-fac" placeholder="Ej: Carlos Andrés" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
+                            <div><label style="font-weight:bold; font-size:13px;">Fecha</label><input type="date" id="caja-fecha" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
+                            <div><label style="font-weight:bold; font-size:13px;">Lugar de Envío</label><input type="text" id="caja-lugar" placeholder="Ej: Sede Maturín" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
+                            <div><label style="font-weight:bold; font-size:13px;">Acción de Formación</label><input type="text" id="caja-accion" placeholder="Ej: Curso de Sistemas" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <!-- Buscador de productos para la caja -->
+                        <div class="panel-box">
+                            <h3 style="margin-top: 0; color: var(--primary-dark);">1. Buscar Producto</h3>
+                            <input type="text" id="caja-search-input" class="search-input" placeholder="🔍 Buscar en inventario..." onkeyup="renderCajaSearchList()" style="max-width: 100%; margin-bottom:10px;">
+                            <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                                <table id="table-caja-search">
+                                    <thead><tr><th>Producto (Disp.)</th><th>Acción</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Carrito de la caja -->
+                        <div class="panel-box" style="border-top: 4px solid var(--accent-yellow);">
+                            <h3 style="margin-top: 0; color: var(--primary-dark);">2. Contenido de la Caja</h3>
+                            <div class="table-responsive" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;">
+                                <table id="table-caja-cart">
+                                    <thead><tr><th>Producto</th><th>Cant.</th><th>Quitar</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                            <button class="btn-success" onclick="generarCaja()" style="width: 100%; padding: 15px; font-size: 16px;">✅ Generar Caja y Descontar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MOVIMIENTOS (NUEVO) -->
+                <div id="movimientos" class="section">
+                    <h2>📜 Historial de Movimientos</h2>
+                    <p style="color: #64748b;">Registro de auditoría. Todas las cajas y ajustes manuales quedan registrados aquí.</p>
+                    <div class="search-container">
+                        <input type="text" class="search-input" placeholder="🔍 Buscar por código, operador, fecha..." onkeyup="filterTable('table-movimientos', this.value)">
+                    </div>
+                    <div class="table-responsive">
+                        <table id="table-movimientos">
+                            <thead><tr><th>Código</th><th>Facilitador / Destino</th><th>Fecha</th><th>Lugar</th><th>Acción de Form.</th><th>Operador</th><th>Detalle / Contenido</th></tr></thead>
                             <tbody></tbody>
                         </table>
                     </div>
@@ -218,16 +256,14 @@
                 <div id="facilitadores" class="section">
                     <div id="view-fac-list">
                         <h2>Gestión de Facilitadores</h2>
-                        <div class="form-row">
+                        <div class="form-row admin-only">
                             <div><label>Nombre del Facilitador</label><input type="text" id="new-fac-name" placeholder="Ej: Carlos Mendoza"></div>
                             <div><label>Cédula / ID</label><input type="text" id="new-fac-id" placeholder="Ej: V-12345678"></div>
                             <button class="btn-small btn-success" onclick="addFacilitator()">Registrar</button>
                         </div>
-                        
                         <div class="search-container">
-                            <input type="text" class="search-input" placeholder="🔍 Buscar facilitador (Nombre o Cédula)..." onkeyup="filterTable('table-fac-list', this.value)">
+                            <input type="text" class="search-input" placeholder="🔍 Buscar facilitador..." onkeyup="filterTable('table-fac-list', this.value)">
                         </div>
-
                         <div class="table-responsive">
                             <table id="table-fac-list">
                                 <thead><tr><th>Cédula</th><th>Nombre</th><th>Material Asignado</th><th>Acciones</th></tr></thead>
@@ -235,34 +271,25 @@
                             </table>
                         </div>
                     </div>
-
+                    <!-- DETALLE FACILITADOR (Oculto inicialmente) -->
                     <div id="view-fac-detail" style="display: none;">
                         <button class="btn-small btn-dark" onclick="closeFacDetail()" style="margin-bottom: 20px;">🔙 Volver a la lista</button>
                         <h2 id="fac-detail-title">Inventario de: </h2>
-                        <div class="grid-2">
-                            
-                            <!-- PANEL: TRASLADAR DESDE OFICINA -->
+                        <div class="grid-2 admin-only">
                             <div class="panel-box">
                                 <h3>Trasladar material de Oficina</h3>
                                 <div style="margin-bottom: 10px;">
-                                    <label style="font-size: 13px; font-weight: bold;">Producto de Oficina:</label>
-                                    
-                                    <!-- NUEVO BUSCADOR PARA EL MENÚ DESPLEGABLE -->
                                     <input type="text" id="search-fac-prod" placeholder="🔍 Escribe para buscar producto..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 8px; outline: none;" onkeyup="renderSelectProductosOficina()">
-                                    
-                                    <select id="fac-sel-producto" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; outline: none;"></select>
+                                    <select id="fac-sel-producto" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></select>
                                 </div>
                                 <div style="display: flex; gap: 10px;">
                                     <input type="number" id="fac-transfer-qty" value="1" min="1" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                                     <button class="btn-small" onclick="transferFromOffice()" style="margin:0;">Trasladar</button>
                                 </div>
                             </div>
-                            
-                            <!-- PANEL: CREAR PRODUCTO DIRECTO -->
                             <div class="panel-box">
-                                <h3>Asignar Producto Nuevo (Directo)</h3>
+                                <h3>Asignar Producto Directo</h3>
                                 <div style="margin-bottom: 10px;">
-                                    <label style="font-size: 13px; font-weight: bold;">Nombre del nuevo producto:</label>
                                     <input type="text" id="fac-direct-prod" placeholder="Ej: Marcadores Azules" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                                 </div>
                                 <div style="display: flex; gap: 10px;">
@@ -271,13 +298,10 @@
                                 </div>
                             </div>
                         </div>
-                        
                         <h3 style="color: var(--primary-dark); margin-top: 30px;">Material en posesión</h3>
-                        
                         <div class="search-container">
-                            <input type="text" class="search-input" placeholder="🔍 Buscar material asignado..." onkeyup="filterTable('table-fac-inventory', this.value)">
+                            <input type="text" class="search-input" placeholder="🔍 Buscar material..." onkeyup="filterTable('table-fac-inventory', this.value)">
                         </div>
-
                         <div class="table-responsive">
                             <table id="table-fac-inventory">
                                 <thead><tr><th>Producto</th><th>Cantidad</th><th>Acciones</th></tr></thead>
@@ -288,39 +312,42 @@
                 </div>
 
                 <!-- PAPELERA -->
-                <div id="papelera" class="section">
+                <div id="papelera" class="section admin-only">
                     <h2>🗑️ Papelera de Reciclaje</h2>
                     <h3 style="color: var(--primary-dark); margin-top: 25px;">Productos Eliminados</h3>
                     <div class="table-responsive">
-                        <table id="table-papelera-prod">
-                            <thead><tr><th>Producto</th><th>Stock que tenía</th><th>Acciones</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
+                        <table id="table-papelera-prod"><thead><tr><th>Producto</th><th>Stock que tenía</th><th>Acciones</th></tr></thead><tbody></tbody></table>
                     </div>
                     <h3 style="color: var(--primary-dark); margin-top: 40px;">Facilitadores Eliminados</h3>
                     <div class="table-responsive">
-                        <table id="table-papelera-fac">
-                            <thead><tr><th>Cédula</th><th>Nombre</th><th>Material que tenía</th><th>Acciones</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
+                        <table id="table-papelera-fac"><thead><tr><th>Cédula</th><th>Nombre</th><th>Material que tenía</th><th>Acciones</th></tr></thead><tbody></tbody></table>
                     </div>
                 </div>
-                
-                <!-- CONFIGURACIÓN -->
-                <div id="configuracion" class="section">
-                    <h2>⚙️ Configuración de Acceso</h2>
-                    <p style="color: #64748b;">Actualiza las credenciales de seguridad para ingresar al sistema.</p>
+
+                <!-- PANEL ADMIN (NUEVO) -->
+                <div id="adminpanel" class="section admin-only">
+                    <h2>⚙️ Panel de Administración</h2>
+                    <p style="color: #64748b;">Crea y administra los accesos de tus empleados.</p>
                     
-                    <div class="panel-box" style="max-width: 400px; margin-top: 20px;">
-                        <div style="margin-bottom: 15px;">
-                            <label style="display: block; font-weight: bold; margin-bottom: 8px; color: var(--primary-dark);">Nuevo Usuario</label>
-                            <input type="text" id="cfg-user" placeholder="Ej: admin2026" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                    <div class="form-row">
+                        <div><label>Nuevo Usuario</label><input type="text" id="new-user-name" placeholder="Ej: maria123"></div>
+                        <div><label>Contraseña</label><input type="text" id="new-user-pass" placeholder="Clave segura"></div>
+                        <div>
+                            <label>Rol de Permisos</label>
+                            <select id="new-user-rol">
+                                <option value="operador">Operador (Solo puede Restar y Crear Cajas)</option>
+                                <option value="admin">Administrador (Control Total)</option>
+                            </select>
                         </div>
-                        <div style="margin-bottom: 20px;">
-                            <label style="display: block; font-weight: bold; margin-bottom: 8px; color: var(--primary-dark);">Nueva Contraseña</label>
-                            <input type="password" id="cfg-pass" placeholder="Ingresa la nueva clave" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-                        </div>
-                        <button onclick="updateCredentials()">Guardar Credenciales</button>
+                        <button class="btn-small btn-success" onclick="createUsuario()">+ Crear Usuario</button>
+                    </div>
+
+                    <h3 style="color: var(--primary-dark); margin-top: 30px;">Usuarios del Sistema</h3>
+                    <div class="table-responsive">
+                        <table id="table-usuarios">
+                            <thead><tr><th>Usuario</th><th>Contraseña</th><th>Nivel de Acceso</th><th>Acción</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -328,72 +355,68 @@
         </div>
     </div>
 
+    <!-- MODAL PARA VER CONTENIDO DE CAJA -->
+    <div id="modal-caja" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-caja-title">Contenido de la Caja</h3>
+                <button class="close-btn" onclick="closeModal()">X</button>
+            </div>
+            <div class="table-responsive" style="margin-top: 0; box-shadow: none;">
+                <table id="table-modal-content">
+                    <thead><tr><th>Producto</th><th>Cantidad Despachada</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script>
-        let sysCreds = JSON.parse(localStorage.getItem('sysCreds')) || { user: 'admin', pass: '123' };
+        // VARIABLES GLOBALES
         let inventarioOficina = {}; let facilitadores = []; let papelera = { productos: {}, facilitadores: [] };
-        let currentFacIndex = null; let dataLoaded = false;
+        let movimientos = []; let usuarios = []; 
+        let currentUser = null; let currentFacIndex = null; let dataLoaded = false;
+        let carritoCaja = {}; // Guarda lo temporal de la caja
 
         if(window.innerWidth > 800) { document.getElementById('desktop-logo').style.display = 'block'; document.getElementById('desktop-title').style.display = 'block'; }
+        
+        // Asignar fecha de hoy al formulario de caja
+        document.getElementById('caja-fecha').valueAsDate = new Date();
 
-        /* ----- FUNCIÓN DEL BUSCADOR DE TABLAS ----- */
+        /* ----- BUSCADOR DE TABLAS ----- */
         function filterTable(tableId, term) {
             const termLower = term.toLowerCase();
             const table = document.getElementById(tableId);
             const trs = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
-            
             for (let i = 0; i < trs.length; i++) {
                 const textData = trs[i].textContent || trs[i].innerText;
-                if (textData.toLowerCase().indexOf(termLower) > -1) {
-                    trs[i].style.display = ""; 
-                } else {
-                    trs[i].style.display = "none"; 
-                }
+                trs[i].style.display = textData.toLowerCase().indexOf(termLower) > -1 ? "" : "none";
             }
         }
 
-        /* ----- NUEVA FUNCIÓN: FILTRAR EL SELECT DE PRODUCTOS ----- */
-        function renderSelectProductosOficina() {
-            const term = document.getElementById('search-fac-prod').value.toLowerCase();
-            const sel = document.getElementById('fac-sel-producto');
-            sel.innerHTML = ''; // Limpia el menú
-            
-            let hasMatches = false;
-            for (let p in inventarioOficina) {
-                // Si el nombre del producto incluye lo que el usuario está escribiendo, lo mostramos
-                if (p.toLowerCase().includes(term)) {
-                    sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`;
-                    hasMatches = true;
-                }
-            }
-            
-            // Si escribió algo que no existe en el inventario
-            if (!hasMatches) {
-                sel.innerHTML = `<option value="">No hay coincidencias</option>`;
-            }
-        }
-
-        /* ----- CARGA Y GUARDADO DE DATOS ----- */
+        /* ----- CARGA Y GUARDADO ----- */
         async function loadData() {
             try {
                 document.getElementById('loading-msg').style.display = 'block';
                 const backupLocal = localStorage.getItem('coftah_datos_seguros');
                 if (backupLocal) {
-                    const parsed = JSON.parse(backupLocal);
-                    inventarioOficina = parsed.oficina || {}; facilitadores = parsed.facilitadores || []; papelera = parsed.papelera || { productos: {}, facilitadores: [] };
+                    const p = JSON.parse(backupLocal);
+                    inventarioOficina = p.oficina || {}; facilitadores = p.facilitadores || []; papelera = p.papelera || { productos: {}, facilitadores: [] };
+                    movimientos = p.movimientos || []; usuarios = p.usuarios || [];
                 }
                 const res = await fetch('/api/sync');
                 if(res.ok) {
                     const data = await res.json();
-                    if(data && data.oficina) {
+                    if(data && data.usuarios) {
                         inventarioOficina = data.oficina; facilitadores = data.facilitadores; papelera = data.papelera;
-                        localStorage.setItem('coftah_datos_seguros', JSON.stringify({ oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera }));
+                        movimientos = data.movimientos; usuarios = data.usuarios;
+                        localStorage.setItem('coftah_datos_seguros', JSON.stringify({ oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera, movimientos: movimientos, usuarios: usuarios }));
                     }
                 }
             } catch (err) {
-                console.error("Fallo de red. Usando memoria local.");
+                console.error("Modo offline activado");
                 document.getElementById('sync-status').style.display = 'block';
-                document.getElementById('sync-status').innerText = '⚠️ Usando modo sin conexión (Los datos están a salvo en este dispositivo)';
-                document.getElementById('sync-status').style.background = '#fef08a'; document.getElementById('sync-status').style.color = '#854d0e';
+                document.getElementById('sync-status').innerText = '⚠️ Modo sin conexión (Datos a salvo localmente)';
             } finally {
                 dataLoaded = true; document.getElementById('loading-msg').style.display = 'none';
                 if (document.getElementById('dashboard-wrapper').style.display === 'flex') updateAllViews();
@@ -401,62 +424,99 @@
         }
 
         async function saveData() {
-            const dataToSave = { oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera };
+            const dataToSave = { oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera, movimientos: movimientos, usuarios: usuarios };
             localStorage.setItem('coftah_datos_seguros', JSON.stringify(dataToSave));
             try {
-                const res = await fetch('/api/sync', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dataToSave)
-                });
-                if(!res.ok) throw new Error("Base de datos no respondió");
+                const res = await fetch('/api/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataToSave) });
+                if(!res.ok) throw new Error("Fallo API");
                 document.getElementById('sync-status').style.display = 'none';
             } catch (err) {
-                console.error("Error nube, pero está guardado local:", err);
                 document.getElementById('sync-status').style.display = 'block';
-                document.getElementById('sync-status').innerText = '⚠️ Error conectando a BD. Datos guardados temporalmente en este equipo.';
+                document.getElementById('sync-status').innerText = '⚠️ Error conectando a BD. Datos guardados temporalmente.';
                 document.getElementById('sync-status').style.background = '#fecaca'; document.getElementById('sync-status').style.color = '#991b1b';
             }
         }
 
         window.onload = loadData;
 
+        /* ----- LOGIN Y ROLES ----- */
         function login() {
             if(!dataLoaded) { alert("Espera a cargar el sistema..."); return; }
             const u = document.getElementById('username').value.trim(); const p = document.getElementById('password').value.trim();
-            if (u === sysCreds.user && p === sysCreds.pass) {
-                document.getElementById('login-screen').style.display = 'none'; document.getElementById('dashboard-wrapper').style.display = 'flex';
-                document.getElementById('username').value = ''; document.getElementById('password').value = ''; updateAllViews();
-            } else alert('Usuario o contraseña incorrectos');
+            
+            // Validar contra la BD
+            const validUser = usuarios.find(user => user.user === u && user.pass === p);
+            if (validUser) {
+                currentUser = validUser;
+                document.getElementById('lbl-current-user').innerText = currentUser.user;
+                document.getElementById('lbl-current-rol').innerText = currentUser.rol.toUpperCase();
+                
+                document.getElementById('login-screen').style.display = 'none'; 
+                document.getElementById('dashboard-wrapper').style.display = 'flex';
+                document.getElementById('username').value = ''; document.getElementById('password').value = ''; 
+                
+                applyRoles();
+                updateAllViews();
+            } else {
+                // Fallback para admin maestro si la bd está vacía (por seguridad)
+                if(u === 'admin' && p === '123') {
+                    currentUser = {user: 'admin', rol: 'admin'};
+                    applyRoles(); document.getElementById('login-screen').style.display = 'none'; document.getElementById('dashboard-wrapper').style.display = 'flex'; updateAllViews();
+                } else {
+                    alert('Usuario o contraseña incorrectos');
+                }
+            }
         }
 
-        function logout() { document.getElementById('dashboard-wrapper').style.display = 'none'; document.getElementById('login-screen').style.display = 'flex'; }
+        function logout() { currentUser = null; document.getElementById('dashboard-wrapper').style.display = 'none'; document.getElementById('login-screen').style.display = 'flex'; }
         
-        function updateCredentials() {
-            const newUser = document.getElementById('cfg-user').value.trim(); const newPass = document.getElementById('cfg-pass').value.trim();
-            if(newUser && newPass) {
-                sysCreds = { user: newUser, pass: newPass }; localStorage.setItem('sysCreds', JSON.stringify(sysCreds));
-                alert('✅ Credenciales actualizadas correctamente.'); document.getElementById('cfg-user').value = ''; document.getElementById('cfg-pass').value = '';
-            } else alert('⚠️ Por favor, ingresa un usuario y una contraseña.');
+        function applyRoles() {
+            // Oculta o muestra elementos que tengan la clase 'admin-only'
+            const adminElements = document.querySelectorAll('.admin-only');
+            if (currentUser.rol === 'operador') {
+                adminElements.forEach(el => el.style.display = 'none');
+            } else {
+                adminElements.forEach(el => el.style.display = '');
+            }
         }
 
+        /* ----- NAVEGACIÓN ----- */
         function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('mobile-overlay').classList.toggle('active'); }
 
         function showSection(id) {
             document.querySelectorAll('.section, .nav-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(id).classList.add('active'); event.currentTarget.classList.add('active');
             if(id === 'facilitadores') closeFacDetail();
-            
-            document.querySelectorAll('.search-input').forEach(input => {
-                input.value = ''; input.dispatchEvent(new Event('keyup'));
-            });
-
+            document.querySelectorAll('.search-input').forEach(input => { input.value = ''; input.dispatchEvent(new Event('keyup')); });
             if (window.innerWidth <= 800) { document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobile-overlay').classList.remove('active'); }
             updateAllViews();
         }
 
-        function updateAllViews() { renderGeneral(); renderOficina(); renderFacilitatorsList(); renderPapelera(); if(currentFacIndex !== null) renderFacilitatorDetail(); }
+        function updateAllViews() { 
+            renderGeneral(); renderOficina(); renderCajaSearchList(); renderCajaCart();
+            renderFacilitatorsList(); renderMovimientos(); renderUsuarios(); renderPapelera(); 
+            if(currentFacIndex !== null) renderFacilitatorDetail(); 
+        }
 
+        /* ----- PANEL ADMIN (USUARIOS) ----- */
+        function renderUsuarios() {
+            const tbody = document.querySelector('#table-usuarios tbody'); tbody.innerHTML = '';
+            usuarios.forEach((u, i) => {
+                const btn = u.user === 'admin' ? '' : `<button class="btn-small btn-danger" onclick="deleteUsuario(${i})">Borrar</button>`;
+                tbody.innerHTML += `<tr><td><strong>${u.user}</strong></td><td>***</td><td><span class="badge" style="background:${u.rol==='admin'?'var(--accent-yellow)':'#e2e8f0'}; color:var(--primary-dark)">${u.rol.toUpperCase()}</span></td><td>${btn}</td></tr>`;
+            });
+        }
+        function createUsuario() {
+            const u = document.getElementById('new-user-name').value.trim(); const p = document.getElementById('new-user-pass').value.trim(); const r = document.getElementById('new-user-rol').value;
+            if (u && p) {
+                if(usuarios.find(x => x.user === u)) { alert("El usuario ya existe"); return; }
+                usuarios.push({user: u, pass: p, rol: r}); document.getElementById('new-user-name').value = ''; document.getElementById('new-user-pass').value = '';
+                saveData(); updateAllViews(); alert("Usuario creado");
+            } else alert("Llena los campos");
+        }
+        function deleteUsuario(i) { if(confirm("¿Borrar usuario?")) { usuarios.splice(i, 1); saveData(); updateAllViews(); } }
+
+        /* ----- INVENTARIO GENERAL ----- */
         function renderGeneral() {
             const tbody = document.querySelector('#table-general tbody'); tbody.innerHTML = '';
             let todos = new Set(Object.keys(inventarioOficina));
@@ -467,113 +527,226 @@
             });
         }
 
+        /* ----- OFICINA Y AJUSTES MANUALES ----- */
+        function renderOficina() {
+            const tbody = document.querySelector('#table-oficina tbody'); tbody.innerHTML = '';
+            for (let p in inventarioOficina) {
+                // Operador solo ve botón de restar. Admin ve sumar y restar.
+                let btnSumar = currentUser.rol === 'admin' ? `<button class="btn-small" onclick="promptAdjustOffice('${p}', 'add')">➕ Sumar</button>` : '';
+                let btnBorrar = currentUser.rol === 'admin' ? `<td><button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button></td>` : '';
+                
+                tbody.innerHTML += `<tr>
+                    <td>${p}</td><td><strong>${inventarioOficina[p]}</strong></td>
+                    <td>${btnSumar} <button class="btn-small btn-warning" onclick="promptAdjustOffice('${p}', 'sub')">➖ Restar</button></td>
+                    ${btnBorrar}
+                </tr>`;
+            }
+        }
+        function addOfficeItem() { const n = document.getElementById('new-item-name').value.trim(); const q = parseInt(document.getElementById('new-item-qty').value) || 0; if (n && inventarioOficina[n] === undefined) { inventarioOficina[n] = q; document.getElementById('new-item-name').value = ''; saveData(); updateAllViews(); } }
+        function deleteOfficeItem(p) { if(confirm(`¿Enviar '${p}' a papelera?`)) { papelera.productos[p] = inventarioOficina[p]; delete inventarioOficina[p]; saveData(); updateAllViews(); } }
+
         function promptAdjustOffice(p, action) {
             const verb = action === 'add' ? 'sumar' : 'restar';
             const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}'?`, "1");
-            if (input === null || input.trim() === "") return;
-            
+            if (!input || input.trim() === "") return;
             const qty = parseInt(input);
-            if (isNaN(qty) || qty <= 0) { alert("⚠️ Ingresa un número válido mayor a 0."); return; }
-            
+            if (isNaN(qty) || qty <= 0) { alert("⚠️ Ingresa un número mayor a 0."); return; }
             const amount = action === 'add' ? qty : -qty;
-            if (inventarioOficina[p] + amount < 0) { alert("⚠️ No puedes restar más de lo que hay disponible en el stock de la oficina."); return; }
+            if (inventarioOficina[p] + amount < 0) { alert("⚠️ Stock insuficiente."); return; }
             
-            inventarioOficina[p] += amount; saveData(); updateAllViews();
+            inventarioOficina[p] += amount;
+            
+            // REGISTRO DE AUDITORIA
+            movimientos.unshift({
+                tipo: 'ajuste', codigo: 'AJUSTE', facilitador: '-',
+                fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-',
+                operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}'`
+            });
+            
+            saveData(); updateAllViews();
+        }
+
+        /* ----- MÓDULO CAJAS ----- */
+        function renderCajaSearchList() {
+            const term = document.getElementById('caja-search-input').value.toLowerCase();
+            const tbody = document.querySelector('#table-caja-search tbody'); tbody.innerHTML = '';
+            for (let p in inventarioOficina) {
+                if (p.toLowerCase().includes(term) && inventarioOficina[p] > 0) {
+                    tbody.innerHTML += `<tr><td><strong>${p}</strong> <span style="color:#64748b; font-size:12px;">(Disp: ${inventarioOficina[p]})</span></td>
+                        <td style="text-align:right;"><button class="btn-small" onclick="promptCajaItem('${p}')">+ Añadir</button></td></tr>`;
+                }
+            }
+        }
+
+        function promptCajaItem(p) {
+            const input = prompt(`¿Cuántas unidades de '${p}' enviarás en esta caja? (Stock: ${inventarioOficina[p]})`, "1");
+            if (!input || input.trim() === "") return;
+            const qty = parseInt(input);
+            if (isNaN(qty) || qty <= 0) { alert("Número inválido."); return; }
+            
+            // Sumar lo que ya esté en el carrito para verificar stock total disponible
+            const inCart = carritoCaja[p] || 0;
+            if ((inCart + qty) > inventarioOficina[p]) { alert("⚠️ No hay suficiente stock en oficina para añadir esa cantidad."); return; }
+            
+            carritoCaja[p] = inCart + qty;
+            renderCajaCart();
+            // Limpiar buscador para facilitar
+            document.getElementById('caja-search-input').value = ''; renderCajaSearchList();
+        }
+
+        function removeCajaItem(p) { delete carritoCaja[p]; renderCajaCart(); }
+
+        function renderCajaCart() {
+            const tbody = document.querySelector('#table-caja-cart tbody'); tbody.innerHTML = '';
+            let hasItems = false;
+            for (let p in carritoCaja) {
+                hasItems = true;
+                tbody.innerHTML += `<tr><td><strong>${p}</strong></td><td><span class="badge">${carritoCaja[p]}</span></td>
+                    <td style="text-align:right;"><button class="btn-small btn-danger" onclick="removeCajaItem('${p}')">X</button></td></tr>`;
+            }
+            if(!hasItems) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#64748b;">La caja está vacía</td></tr>`;
+        }
+
+        function generarCaja() {
+            const fac = document.getElementById('caja-fac').value.trim() || 'No especificado';
+            const fec = document.getElementById('caja-fecha').value || new Date().toISOString().split('T')[0];
+            const lug = document.getElementById('caja-lugar').value.trim() || 'No especificado';
+            const acc = document.getElementById('caja-accion').value.trim() || 'No especificado';
+
+            if (Object.keys(carritoCaja).length === 0) { alert("⚠️ La caja está vacía. Añade productos primero."); return; }
+            
+            // Descontar del inventario real
+            for (let p in carritoCaja) {
+                inventarioOficina[p] -= carritoCaja[p];
+            }
+
+            // Crear el código CAJ-XXX
+            const cajasCount = movimientos.filter(m => m.tipo === 'caja').length + 1;
+            const codCaja = 'CAJ-' + String(cajasCount).padStart(3, '0');
+
+            // Guardar registro
+            movimientos.unshift({
+                tipo: 'caja',
+                codigo: codCaja,
+                facilitador: fac,
+                fecha: fec,
+                lugar: lug,
+                accion: acc,
+                operador: currentUser.user,
+                contenido: { ...carritoCaja }
+            });
+
+            // Limpiar todo
+            carritoCaja = {};
+            document.getElementById('caja-fac').value = ''; document.getElementById('caja-lugar').value = ''; document.getElementById('caja-accion').value = '';
+            
+            alert(`✅ ¡Caja ${codCaja} generada con éxito! El inventario ha sido descontado.`);
+            saveData(); updateAllViews(); showSection('movimientos');
+        }
+
+        /* ----- MOVIMIENTOS E HISTORIAL ----- */
+        function renderMovimientos() {
+            const tbody = document.querySelector('#table-movimientos tbody'); tbody.innerHTML = '';
+            movimientos.forEach((m, i) => {
+                let btnDetalle = '';
+                if(m.tipo === 'caja') {
+                    btnDetalle = `<button class="btn-small btn-info" onclick='openModal(${i})'>📦 Ver Contenido</button>`;
+                } else {
+                    btnDetalle = `<span style="font-size:13px; color:#64748b;">${m.detalle}</span>`;
+                }
+
+                tbody.innerHTML += `<tr>
+                    <td><strong>${m.codigo}</strong></td>
+                    <td>${m.facilitador}</td>
+                    <td>${m.fecha}</td>
+                    <td>${m.lugar}</td>
+                    <td>${m.accion}</td>
+                    <td><span class="badge" style="background:#e2e8f0; color:var(--primary-dark)">${m.operador}</span></td>
+                    <td>${btnDetalle}</td>
+                </tr>`;
+            });
+        }
+
+        function openModal(index) {
+            const mov = movimientos[index];
+            document.getElementById('modal-caja-title').innerText = `Contenido: ${mov.codigo} (${mov.facilitador})`;
+            const tbody = document.querySelector('#table-modal-content tbody'); tbody.innerHTML = '';
+            
+            for (let p in mov.contenido) {
+                tbody.innerHTML += `<tr><td><strong>${p}</strong></td><td><span class="badge">${mov.contenido[p]} Unds.</span></td></tr>`;
+            }
+            document.getElementById('modal-caja').classList.add('active');
+        }
+        function closeModal() { document.getElementById('modal-caja').classList.remove('active'); }
+
+        /* ----- FACILITADORES ----- */
+        function countTotalItems(inv) { return Object.values(inv).reduce((a, b) => a + b, 0); }
+        function renderFacilitatorsList() {
+            const tbody = document.querySelector('#table-fac-list tbody'); tbody.innerHTML = '';
+            facilitadores.forEach((f, i) => {
+                let btnBorrar = currentUser.rol === 'admin' ? `<button class="btn-small btn-danger" onclick="deleteFacilitator(${i})">🗑️</button>` : '';
+                tbody.innerHTML += `<tr><td>${f.id}</td><td><strong>${f.nombre}</strong></td><td><span class="badge" style="background:#e2e8f0; color:#1e293b">${countTotalItems(f.inventario)} items</span></td>
+                    <td><button class="btn-small" onclick="openFacDetail(${i})">Gestionar</button>${btnBorrar}</td></tr>`;
+            });
+        }
+        function addFacilitator() { const n = document.getElementById('new-fac-name').value.trim(); const id = document.getElementById('new-fac-id').value.trim(); if (n && id) { facilitadores.push({ id, nombre: n, inventario: {} }); document.getElementById('new-fac-name').value = ''; document.getElementById('new-fac-id').value = ''; saveData(); updateAllViews(); } }
+        function deleteFacilitator(i) { if(confirm('¿Enviar a papelera?')) { papelera.facilitadores.push(facilitadores.splice(i, 1)[0]); saveData(); updateAllViews(); } }
+        
+        function openFacDetail(i) { currentFacIndex = i; document.getElementById('view-fac-list').style.display = 'none'; document.getElementById('view-fac-detail').style.display = 'block'; renderFacilitatorDetail(); }
+        function closeFacDetail() { currentFacIndex = null; document.getElementById('view-fac-list').style.display = 'block'; document.getElementById('view-fac-detail').style.display = 'none'; }
+
+        function renderSelectProductosOficina() {
+            const term = (document.getElementById('search-fac-prod')?.value || '').toLowerCase();
+            const sel = document.getElementById('fac-sel-producto');
+            if(!sel) return;
+            sel.innerHTML = ''; let hasMatches = false;
+            for (let p in inventarioOficina) {
+                if (p.toLowerCase().includes(term) && inventarioOficina[p] > 0) {
+                    sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`; hasMatches = true;
+                }
+            }
+            if (!hasMatches) sel.innerHTML = `<option value="">Sin stock / No existe</option>`;
+        }
+
+        function renderFacilitatorDetail() {
+            const f = facilitadores[currentFacIndex]; document.getElementById('fac-detail-title').innerText = `Inventario de: ${f.nombre}`;
+            if(document.getElementById('search-fac-prod')) { document.getElementById('search-fac-prod').value = ''; renderSelectProductosOficina(); }
+            
+            const tbody = document.querySelector('#table-fac-inventory tbody'); tbody.innerHTML = '';
+            for (let p in f.inventario) {
+                let btnSumar = currentUser.rol === 'admin' ? `<button class="btn-small" onclick="promptAdjustFacItem('${p}', 'add')">➕ Sumar</button>` : '';
+                tbody.innerHTML += `<tr><td>${p}</td><td><strong>${f.inventario[p]}</strong></td>
+                    <td>${btnSumar}<button class="btn-small btn-warning" onclick="promptAdjustFacItem('${p}', 'sub')">➖ Restar</button><button class="btn-small btn-danger admin-only" onclick="returnToOffice('${p}')" style="display:${currentUser.rol==='admin'?'inline-block':'none'}">Devolver Todo</button></td></tr>`;
+            }
         }
 
         function promptAdjustFacItem(p, action) {
             const verb = action === 'add' ? 'sumar' : 'restar';
             const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}' de este facilitador?`, "1");
-            if (input === null || input.trim() === "") return;
+            if (!input || input.trim() === "") return;
+            const qty = parseInt(input); if (isNaN(qty) || qty <= 0) { alert("⚠️ Inválido."); return; }
             
-            const qty = parseInt(input);
-            if (isNaN(qty) || qty <= 0) { alert("⚠️ Ingresa un número válido mayor a 0."); return; }
+            const amount = action === 'add' ? qty : -qty; const f = facilitadores[currentFacIndex];
+            if (f.inventario[p] + amount < 0) { alert("⚠️ No puedes restar más de lo que tiene."); return; }
             
-            const amount = action === 'add' ? qty : -qty;
-            const f = facilitadores[currentFacIndex];
+            f.inventario[p] += amount; if (f.inventario[p] === 0) delete f.inventario[p];
             
-            if (f.inventario[p] + amount < 0) { alert("⚠️ No puedes restar más de lo que el facilitador tiene en su poder."); return; }
-            
-            f.inventario[p] += amount;
-            if (f.inventario[p] === 0) delete f.inventario[p];
+            // Auditoría
+            movimientos.unshift({ tipo: 'ajuste', codigo: 'AJUSTE', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}' a facilitador` });
             saveData(); updateAllViews();
         }
 
-        function renderOficina() {
-            const tbody = document.querySelector('#table-oficina tbody'); tbody.innerHTML = '';
-            for (let p in inventarioOficina) {
-                tbody.innerHTML += `<tr><td>${p}</td><td><strong>${inventarioOficina[p]}</strong></td>
-                    <td><button class="btn-small" onclick="promptAdjustOffice('${p}', 'add')">➕ Sumar</button><button class="btn-small btn-warning" onclick="promptAdjustOffice('${p}', 'sub')">➖ Restar</button></td>
-                    <td><button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button></td></tr>`;
-            }
-        }
+        function transferFromOffice() { const p = document.getElementById('fac-sel-producto').value; const q = parseInt(document.getElementById('fac-transfer-qty').value); if (p && q > 0) { if (inventarioOficina[p] >= q) { inventarioOficina[p] -= q; const f = facilitadores[currentFacIndex]; f.inventario[p] = (f.inventario[p] || 0) + q; movimientos.unshift({ tipo: 'ajuste', codigo: 'TRASLADO', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Trasladó ${q} '${p}' desde oficina` }); saveData(); updateAllViews(); } else alert('Stock insuficiente en oficina'); } }
+        function addDirectProduct() { const p = document.getElementById('fac-direct-prod').value.trim(); const q = parseInt(document.getElementById('fac-direct-qty').value); if (p && q > 0) { if (inventarioOficina[p] === undefined) inventarioOficina[p] = 0; const f = facilitadores[currentFacIndex]; f.inventario[p] = (f.inventario[p] || 0) + q; movimientos.unshift({ tipo: 'ajuste', codigo: 'ASIGNACIÓN DIRECTA', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Creó y asignó ${q} '${p}'` }); saveData(); updateAllViews(); } }
+        function returnToOffice(p) { const f = facilitadores[currentFacIndex]; if (f.inventario[p] > 0) { inventarioOficina[p] = (inventarioOficina[p] || 0) + f.inventario[p]; movimientos.unshift({ tipo: 'ajuste', codigo: 'DEVOLUCIÓN', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Devolvió todo el stock (${f.inventario[p]}) de '${p}' a oficina` }); delete f.inventario[p]; saveData(); updateAllViews(); } }
 
-        function addOfficeItem() {
-            const n = document.getElementById('new-item-name').value.trim(); const q = parseInt(document.getElementById('new-item-qty').value) || 0;
-            if (n && inventarioOficina[n] === undefined) { inventarioOficina[n] = q; document.getElementById('new-item-name').value = ''; saveData(); updateAllViews(); }
-        }
-
-        function deleteOfficeItem(p) { if(confirm(`¿Enviar '${p}' a papelera?`)) { papelera.productos[p] = inventarioOficina[p]; delete inventarioOficina[p]; saveData(); updateAllViews(); } }
-        function countTotalItems(inv) { return Object.values(inv).reduce((a, b) => a + b, 0); }
-
-        function renderFacilitatorsList() {
-            const tbody = document.querySelector('#table-fac-list tbody'); tbody.innerHTML = '';
-            facilitadores.forEach((f, i) => {
-                tbody.innerHTML += `<tr><td>${f.id}</td><td><strong>${f.nombre}</strong></td><td><span class="badge" style="background:#e2e8f0; color:#1e293b">${countTotalItems(f.inventario)} items</span></td>
-                    <td><button class="btn-small" onclick="openFacDetail(${i})">Gestionar</button><button class="btn-small btn-danger" onclick="deleteFacilitator(${i})">🗑️</button></td></tr>`;
-            });
-        }
-
-        function addFacilitator() {
-            const n = document.getElementById('new-fac-name').value.trim(); const id = document.getElementById('new-fac-id').value.trim();
-            if (n && id) { facilitadores.push({ id, nombre: n, inventario: {} }); document.getElementById('new-fac-name').value = ''; document.getElementById('new-fac-id').value = ''; saveData(); updateAllViews(); }
-        }
-
-        function deleteFacilitator(i) { if(confirm('¿Enviar facilitador a papelera?')) { papelera.facilitadores.push(facilitadores.splice(i, 1)[0]); saveData(); updateAllViews(); } }
-        
-        function openFacDetail(i) { 
-            currentFacIndex = i; 
-            document.getElementById('view-fac-list').style.display = 'none'; 
-            document.getElementById('view-fac-detail').style.display = 'block'; 
-            renderFacilitatorDetail(); 
-        }
-        
-        function closeFacDetail() { currentFacIndex = null; document.getElementById('view-fac-list').style.display = 'block'; document.getElementById('view-fac-detail').style.display = 'none'; }
-
-        function renderFacilitatorDetail() {
-            const f = facilitadores[currentFacIndex]; 
-            document.getElementById('fac-detail-title').innerText = `Inventario de: ${f.nombre}`;
-            
-            // Limpiar buscador y renderizar las opciones del select
-            document.getElementById('search-fac-prod').value = '';
-            renderSelectProductosOficina();
-            
-            const tbody = document.querySelector('#table-fac-inventory tbody'); tbody.innerHTML = '';
-            for (let p in f.inventario) {
-                tbody.innerHTML += `<tr><td>${p}</td><td><strong>${f.inventario[p]}</strong></td>
-                    <td><button class="btn-small" onclick="promptAdjustFacItem('${p}', 'add')">➕ Sumar</button><button class="btn-small btn-warning" onclick="promptAdjustFacItem('${p}', 'sub')">➖ Restar</button><button class="btn-small btn-danger" onclick="returnToOffice('${p}')">Devolver Todo</button></td></tr>`;
-            }
-        }
-
-        function transferFromOffice() {
-            const p = document.getElementById('fac-sel-producto').value; const q = parseInt(document.getElementById('fac-transfer-qty').value);
-            if (p && q > 0) { if (inventarioOficina[p] >= q) { inventarioOficina[p] -= q; const f = facilitadores[currentFacIndex]; f.inventario[p] = (f.inventario[p] || 0) + q; saveData(); updateAllViews(); } else alert('Stock insuficiente en oficina'); }
-        }
-
-        function addDirectProduct() {
-            const p = document.getElementById('fac-direct-prod').value.trim(); const q = parseInt(document.getElementById('fac-direct-qty').value);
-            if (p && q > 0) { if (inventarioOficina[p] === undefined) inventarioOficina[p] = 0; const f = facilitadores[currentFacIndex]; f.inventario[p] = (f.inventario[p] || 0) + q; saveData(); updateAllViews(); }
-        }
-
-        function returnToOffice(p) { const f = facilitadores[currentFacIndex]; if (f.inventario[p] > 0) { inventarioOficina[p] = (inventarioOficina[p] || 0) + f.inventario[p]; delete f.inventario[p]; saveData(); updateAllViews(); } }
-
+        /* ----- PAPELERA ----- */
         function renderPapelera() {
             const tP = document.querySelector('#table-papelera-prod tbody'); tP.innerHTML = '';
             for(let p in papelera.productos) { tP.innerHTML += `<tr><td>${p}</td><td>${papelera.productos[p]}</td><td><button class="btn-small btn-success" onclick="restoreProduct('${p}')">♻️</button><button class="btn-small btn-danger" onclick="hardDeleteProduct('${p}')">❌</button></td></tr>`; }
             const tF = document.querySelector('#table-papelera-fac tbody'); tF.innerHTML = '';
             papelera.facilitadores.forEach((f, i) => { tF.innerHTML += `<tr><td>${f.id}</td><td>${f.nombre}</td><td>${countTotalItems(f.inventario)} items</td><td><button class="btn-small btn-success" onclick="restoreFacilitator(${i})">♻️</button><button class="btn-small btn-danger" onclick="hardDeleteFacilitator(${i})">❌</button></td></tr>`; });
         }
-
         function restoreProduct(p) { inventarioOficina[p] = (inventarioOficina[p] !== undefined ? inventarioOficina[p] : 0) + papelera.productos[p]; delete papelera.productos[p]; saveData(); updateAllViews(); }
         function hardDeleteProduct(p) { if(confirm('¿Eliminar permanente?')) { delete papelera.productos[p]; saveData(); updateAllViews(); } }
         function restoreFacilitator(i) { facilitadores.push(papelera.facilitadores.splice(i, 1)[0]); saveData(); updateAllViews(); }
