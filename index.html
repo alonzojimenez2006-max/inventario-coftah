@@ -88,8 +88,9 @@
         
         #sync-status { padding: 8px; text-align: center; font-size: 12px; font-weight: bold; background: #e2e8f0; color: #475569; border-radius: 4px; margin-bottom: 15px; display: none; }
 
-        /* MODAL CAJA CONTENT */
+        /* MODALES */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+        .modal.active { display: flex; }
         .modal-content { background: #fff; padding: 25px; border-radius: 8px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; border-top: 5px solid var(--primary-dark); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid var(--accent-yellow); padding-bottom: 10px; }
         .modal-header h3 { margin: 0; color: var(--primary-dark); }
@@ -333,7 +334,7 @@
                         <div>
                             <label>Rol de Permisos</label>
                             <select id="new-user-rol">
-                                <option value="operador">Operador (Solo puede Restar y Crear Cajas)</option>
+                                <option value="operador">Operador (Solo Cajas y Restar)</option>
                                 <option value="admin">Administrador (Control Total)</option>
                             </select>
                         </div>
@@ -343,7 +344,7 @@
                     <h3 style="color: var(--primary-dark); margin-top: 30px;">Usuarios del Sistema</h3>
                     <div class="table-responsive">
                         <table id="table-usuarios">
-                            <thead><tr><th>Usuario</th><th>Contraseña</th><th>Nivel de Acceso</th><th>Acción</th></tr></thead>
+                            <thead><tr><th>Usuario</th><th>Contraseña</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
                             <tbody></tbody>
                         </table>
                     </div>
@@ -358,7 +359,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modal-caja-title">Contenido de la Caja</h3>
-                <button class="close-btn" onclick="closeModal()">X</button>
+                <button class="close-btn" onclick="closeModalCaja()">X</button>
             </div>
             <div class="table-responsive" style="margin-top: 0; box-shadow: none;">
                 <table id="table-modal-content">
@@ -369,11 +370,37 @@
         </div>
     </div>
 
+    <!-- MODAL PARA EDITAR USUARIOS -->
+    <div id="modal-edit-user" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 id="modal-user-title">Editar Usuario</h3>
+                <button class="close-btn" onclick="closeModalEditUser()">X</button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display:block; font-weight:bold; margin-bottom:5px;">Nombre de Usuario</label>
+                <input type="text" id="edit-user-name" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display:block; font-weight:bold; margin-bottom:5px;">Contraseña</label>
+                <input type="text" id="edit-user-pass" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display:block; font-weight:bold; margin-bottom:5px;">Rol de Permisos</label>
+                <select id="edit-user-rol" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                    <option value="operador">Operador (Restringido)</option>
+                    <option value="admin">Administrador (Total)</option>
+                </select>
+            </div>
+            <button class="btn-success" onclick="saveUserEdit()" style="width: 100%; padding: 12px;">💾 Guardar Cambios</button>
+        </div>
+    </div>
+
     <script>
-        // VARIABLES GLOBALES - Eliminamos el bloqueo forzando a que siempre permita loguear.
+        // VARIABLES GLOBALES
         let inventarioOficina = {}; let facilitadores = []; let papelera = { productos: {}, facilitadores: [] };
         let movimientos = []; let usuarios = []; 
-        let currentUser = null; let currentFacIndex = null;
+        let currentUser = null; let currentFacIndex = null; let editingUserIndex = null;
         let carritoCaja = {}; 
 
         if(window.innerWidth > 800) { 
@@ -399,49 +426,34 @@
 
         /* ----- CARGA INMEDIATA Y SINCRONIZACIÓN SILENCIOSA ----- */
         async function loadData() {
-            // 1. Intentar cargar los datos locales de la computadora DE INMEDIATO
             try {
                 const backupLocal = localStorage.getItem('coftah_datos_seguros');
                 if (backupLocal) {
                     const p = JSON.parse(backupLocal);
-                    inventarioOficina = p.oficina || {}; 
-                    facilitadores = p.facilitadores || []; 
-                    papelera = p.papelera || { productos: {}, facilitadores: [] };
-                    movimientos = p.movimientos || []; 
-                    usuarios = p.usuarios || [];
+                    inventarioOficina = p.oficina || {}; facilitadores = p.facilitadores || []; papelera = p.papelera || { productos: {}, facilitadores: [] };
+                    movimientos = p.movimientos || []; usuarios = p.usuarios || [];
                 }
             } catch(e) { console.error("Error leyendo caché local."); }
 
-            // 2. Conectar a Neon silenciosamente en segundo plano
             try {
                 document.getElementById('loading-msg').style.display = 'block';
                 const res = await fetch('/api/sync');
                 if(res.ok) {
                     const data = await res.json();
                     if(data && data.usuarios) {
-                        inventarioOficina = data.oficina || {}; 
-                        facilitadores = data.facilitadores || []; 
-                        papelera = data.papelera || { productos: {}, facilitadores: [] };
-                        movimientos = data.movimientos || []; 
-                        usuarios = data.usuarios || [];
+                        inventarioOficina = data.oficina || {}; facilitadores = data.facilitadores || []; papelera = data.papelera || { productos: {}, facilitadores: [] };
+                        movimientos = data.movimientos || []; usuarios = data.usuarios || [];
                         localStorage.setItem('coftah_datos_seguros', JSON.stringify({ 
-                            oficina: inventarioOficina, facilitadores: facilitadores, 
-                            papelera: papelera, movimientos: movimientos, usuarios: usuarios 
+                            oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera, movimientos: movimientos, usuarios: usuarios 
                         }));
-                        
-                        // Si el usuario ya entró al sistema, actualizar la pantalla con los nuevos datos
-                        if (document.getElementById('dashboard-wrapper').style.display === 'flex') {
-                            updateAllViews();
-                        }
+                        if (document.getElementById('dashboard-wrapper').style.display === 'flex') updateAllViews();
                     }
                 }
             } catch (err) {
                 console.error("Modo offline activado");
                 document.getElementById('sync-status').style.display = 'block';
                 document.getElementById('sync-status').innerText = '⚠️ Modo sin conexión (Datos a salvo localmente)';
-            } finally {
-                document.getElementById('loading-msg').style.display = 'none';
-            }
+            } finally { document.getElementById('loading-msg').style.display = 'none'; }
         }
 
         async function saveData() {
@@ -458,7 +470,7 @@
             }
         }
 
-        /* ----- LOGIN SIN RESTRICCIONES DE CARGA ----- */
+        /* ----- LOGIN Y ROLES CON PROTECCIÓN ----- */
         function login() {
             const u = document.getElementById('username').value.trim(); 
             const p = document.getElementById('password').value.trim();
@@ -466,6 +478,11 @@
             const validUser = usuarios.find(user => user.user === u && user.pass === p);
             
             if (validUser) {
+                // Validación de congelamiento
+                if(validUser.activo === false) {
+                    alert('⚠️ Tu usuario ha sido suspendido/congelado por el Administrador.'); return;
+                }
+                
                 currentUser = validUser;
                 document.getElementById('lbl-current-user').innerText = currentUser.user;
                 document.getElementById('lbl-current-rol').innerText = currentUser.rol.toUpperCase();
@@ -474,22 +491,16 @@
                 document.getElementById('dashboard-wrapper').style.display = 'flex';
                 document.getElementById('username').value = ''; document.getElementById('password').value = ''; 
                 
-                applyRoles();
-                updateAllViews();
+                applyRoles(); updateAllViews();
             } else {
-                // Puerta trasera de emergencia si la BD está vacía o el internet falla
                 if(u === 'admin' && p === '123') {
                     currentUser = {user: 'admin', rol: 'admin'};
                     document.getElementById('lbl-current-user').innerText = 'Administrador Maestro';
                     document.getElementById('lbl-current-rol').innerText = 'ADMIN';
                     
                     applyRoles(); 
-                    document.getElementById('login-screen').style.display = 'none'; 
-                    document.getElementById('dashboard-wrapper').style.display = 'flex'; 
-                    updateAllViews();
-                } else {
-                    alert('Usuario o contraseña incorrectos');
-                }
+                    document.getElementById('login-screen').style.display = 'none'; document.getElementById('dashboard-wrapper').style.display = 'flex'; updateAllViews();
+                } else { alert('Usuario o contraseña incorrectos'); }
             }
         }
 
@@ -497,11 +508,8 @@
         
         function applyRoles() {
             const adminElements = document.querySelectorAll('.admin-only');
-            if (currentUser.rol === 'operador') {
-                adminElements.forEach(el => el.style.display = 'none');
-            } else {
-                adminElements.forEach(el => el.style.display = '');
-            }
+            if (currentUser.rol === 'operador') { adminElements.forEach(el => el.style.display = 'none'); } 
+            else { adminElements.forEach(el => el.style.display = ''); }
         }
 
         /* ----- NAVEGACIÓN ----- */
@@ -522,23 +530,87 @@
             if(currentFacIndex !== null) renderFacilitatorDetail(); 
         }
 
-        /* ----- PANEL ADMIN (USUARIOS) ----- */
+        /* ----- PANEL ADMIN (CRUD USUARIOS COMPLETO) ----- */
         function renderUsuarios() {
             const tbody = document.querySelector('#table-usuarios tbody'); tbody.innerHTML = '';
             usuarios.forEach((u, i) => {
-                const btn = u.user === 'admin' ? '' : `<button class="btn-small btn-danger" onclick="deleteUsuario(${i})">Borrar</button>`;
-                tbody.innerHTML += `<tr><td><strong>${u.user}</strong></td><td>***</td><td><span class="badge" style="background:${u.rol==='admin'?'var(--accent-yellow)':'#e2e8f0'}; color:var(--primary-dark)">${u.rol.toUpperCase()}</span></td><td>${btn}</td></tr>`;
+                const isMaster = u.user === 'admin';
+                const statusBadge = u.activo !== false ? `<span class="badge" style="background:#22c55e; color:white;">ACTIVO</span>` : `<span class="badge" style="background:#64748b; color:white;">CONGELADO</span>`;
+                
+                let btns = '';
+                if (!isMaster) {
+                    const freezeText = u.activo !== false ? '❄️ Congelar' : '🔥 Descongelar';
+                    btns = `<button class="btn-small btn-info" onclick="openModalEditUser(${i})">✏️ Editar</button>
+                            <button class="btn-small btn-warning" onclick="toggleFreezeUsuario(${i})">${freezeText}</button>
+                            <button class="btn-small btn-danger" onclick="deleteUsuario(${i})">🗑️ Borrar</button>`;
+                } else {
+                    btns = `<button class="btn-small btn-info" onclick="openModalEditUser(${i})">✏️ Editar Clave</button> <span style="font-size:12px; color:#64748b;">(Maestro Protegido)</span>`;
+                }
+
+                tbody.innerHTML += `<tr>
+                    <td><strong>${u.user}</strong></td>
+                    <td>***</td>
+                    <td><span class="badge" style="background:${u.rol==='admin'?'var(--accent-yellow)':'#e2e8f0'}; color:var(--primary-dark)">${u.rol.toUpperCase()}</span></td>
+                    <td>${statusBadge}</td>
+                    <td>${btns}</td>
+                </tr>`;
             });
         }
+
         function createUsuario() {
             const u = document.getElementById('new-user-name').value.trim(); const p = document.getElementById('new-user-pass').value.trim(); const r = document.getElementById('new-user-rol').value;
             if (u && p) {
                 if(usuarios.find(x => x.user === u)) { alert("El usuario ya existe"); return; }
-                usuarios.push({user: u, pass: p, rol: r}); document.getElementById('new-user-name').value = ''; document.getElementById('new-user-pass').value = '';
+                usuarios.push({user: u, pass: p, rol: r, activo: true}); 
+                document.getElementById('new-user-name').value = ''; document.getElementById('new-user-pass').value = '';
                 saveData(); updateAllViews(); alert("Usuario creado");
             } else alert("Llena los campos");
         }
-        function deleteUsuario(i) { if(confirm("¿Borrar usuario?")) { usuarios.splice(i, 1); saveData(); updateAllViews(); } }
+
+        function openModalEditUser(i) {
+            editingUserIndex = i;
+            const u = usuarios[i];
+            document.getElementById('edit-user-name').value = u.user;
+            document.getElementById('edit-user-pass').value = u.pass;
+            document.getElementById('edit-user-rol').value = u.rol;
+            
+            // Proteger al Admin Maestro de cambios de nombre y rol
+            if (u.user === 'admin') {
+                document.getElementById('edit-user-name').disabled = true;
+                document.getElementById('edit-user-rol').disabled = true;
+            } else {
+                document.getElementById('edit-user-name').disabled = false;
+                document.getElementById('edit-user-rol').disabled = false;
+            }
+            
+            document.getElementById('modal-edit-user').classList.add('active');
+        }
+
+        function closeModalEditUser() { document.getElementById('modal-edit-user').classList.remove('active'); }
+
+        function saveUserEdit() {
+            const u = document.getElementById('edit-user-name').value.trim();
+            const p = document.getElementById('edit-user-pass').value.trim();
+            const r = document.getElementById('edit-user-rol').value;
+            
+            if(!u || !p) { alert("Los campos no pueden estar vacíos."); return; }
+            
+            const isDuplicate = usuarios.find((user, idx) => user.user === u && idx !== editingUserIndex);
+            if(isDuplicate) { alert("Este nombre de usuario ya está siendo utilizado."); return; }
+            
+            usuarios[editingUserIndex].user = u;
+            usuarios[editingUserIndex].pass = p;
+            usuarios[editingUserIndex].rol = r;
+            
+            closeModalEditUser(); saveData(); updateAllViews(); alert("✅ Cambios guardados correctamente.");
+        }
+
+        function toggleFreezeUsuario(i) {
+            if(usuarios[i].activo === false) { usuarios[i].activo = true; } else { usuarios[i].activo = false; }
+            saveData(); updateAllViews();
+        }
+
+        function deleteUsuario(i) { if(confirm("¿Estás seguro de borrar este usuario permanentemente?")) { usuarios.splice(i, 1); saveData(); updateAllViews(); } }
 
         /* ----- INVENTARIO GENERAL ----- */
         function renderGeneral() {
@@ -578,11 +650,7 @@
             if (inventarioOficina[p] + amount < 0) { alert("⚠️ Stock insuficiente."); return; }
             
             inventarioOficina[p] += amount;
-            movimientos.unshift({
-                tipo: 'ajuste', codigo: 'AJUSTE', facilitador: '-',
-                fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-',
-                operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}'`
-            });
+            movimientos.unshift({ tipo: 'ajuste', codigo: 'AJUSTE', facilitador: '-', fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}'` });
             saveData(); updateAllViews();
         }
 
@@ -606,8 +674,7 @@
             const inCart = carritoCaja[p] || 0;
             if ((inCart + qty) > inventarioOficina[p]) { alert("⚠️ No hay suficiente stock en oficina para añadir esa cantidad."); return; }
             
-            carritoCaja[p] = inCart + qty;
-            renderCajaCart();
+            carritoCaja[p] = inCart + qty; renderCajaCart();
             document.getElementById('caja-search-input').value = ''; renderCajaSearchList();
         }
 
@@ -631,20 +698,14 @@
             const acc = document.getElementById('caja-accion').value.trim() || 'No especificado';
 
             if (Object.keys(carritoCaja).length === 0) { alert("⚠️ La caja está vacía. Añade productos primero."); return; }
-            
             for (let p in carritoCaja) inventarioOficina[p] -= carritoCaja[p];
 
             const cajasCount = movimientos.filter(m => m.tipo === 'caja').length + 1;
             const codCaja = 'CAJ-' + String(cajasCount).padStart(3, '0');
 
-            movimientos.unshift({
-                tipo: 'caja', codigo: codCaja, facilitador: fac, fecha: fec, lugar: lug, accion: acc,
-                operador: currentUser.user, contenido: { ...carritoCaja }
-            });
+            movimientos.unshift({ tipo: 'caja', codigo: codCaja, facilitador: fac, fecha: fec, lugar: lug, accion: acc, operador: currentUser.user, contenido: { ...carritoCaja } });
 
-            carritoCaja = {};
-            document.getElementById('caja-fac').value = ''; document.getElementById('caja-lugar').value = ''; document.getElementById('caja-accion').value = '';
-            
+            carritoCaja = {}; document.getElementById('caja-fac').value = ''; document.getElementById('caja-lugar').value = ''; document.getElementById('caja-accion').value = '';
             alert(`✅ ¡Caja ${codCaja} generada con éxito! El inventario ha sido descontado.`);
             saveData(); updateAllViews(); showSection('movimientos');
         }
@@ -654,7 +715,7 @@
             const tbody = document.querySelector('#table-movimientos tbody'); tbody.innerHTML = '';
             movimientos.forEach((m, i) => {
                 let btnDetalle = m.tipo === 'caja' 
-                    ? `<button class="btn-small btn-info" onclick='openModal(${i})'>📦 Ver Contenido</button>` 
+                    ? `<button class="btn-small btn-info" onclick='openModalCaja(${i})'>📦 Ver Contenido</button>` 
                     : `<span style="font-size:13px; color:#64748b;">${m.detalle}</span>`;
 
                 tbody.innerHTML += `<tr>
@@ -666,14 +727,13 @@
             });
         }
 
-        function openModal(index) {
-            const mov = movimientos[index];
-            document.getElementById('modal-caja-title').innerText = `Contenido: ${mov.codigo} (${mov.facilitador})`;
+        function openModalCaja(index) {
+            const mov = movimientos[index]; document.getElementById('modal-caja-title').innerText = `Contenido: ${mov.codigo} (${mov.facilitador})`;
             const tbody = document.querySelector('#table-modal-content tbody'); tbody.innerHTML = '';
             for (let p in mov.contenido) tbody.innerHTML += `<tr><td><strong>${p}</strong></td><td><span class="badge">${mov.contenido[p]} Unds.</span></td></tr>`;
             document.getElementById('modal-caja').classList.add('active');
         }
-        function closeModal() { document.getElementById('modal-caja').classList.remove('active'); }
+        function closeModalCaja() { document.getElementById('modal-caja').classList.remove('active'); }
 
         /* ----- FACILITADORES ----- */
         function countTotalItems(inv) { return Object.values(inv).reduce((a, b) => a + b, 0); }
@@ -697,9 +757,7 @@
             if(!sel) return;
             sel.innerHTML = ''; let hasMatches = false;
             for (let p in inventarioOficina) {
-                if (p.toLowerCase().includes(term) && inventarioOficina[p] > 0) {
-                    sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`; hasMatches = true;
-                }
+                if (p.toLowerCase().includes(term) && inventarioOficina[p] > 0) { sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`; hasMatches = true; }
             }
             if (!hasMatches) sel.innerHTML = `<option value="">Sin stock / No existe</option>`;
         }
@@ -707,7 +765,6 @@
         function renderFacilitatorDetail() {
             const f = facilitadores[currentFacIndex]; document.getElementById('fac-detail-title').innerText = `Inventario de: ${f.nombre}`;
             if(document.getElementById('search-fac-prod')) { document.getElementById('search-fac-prod').value = ''; renderSelectProductosOficina(); }
-            
             const tbody = document.querySelector('#table-fac-inventory tbody'); tbody.innerHTML = '';
             for (let p in f.inventario) {
                 let btnSumar = currentUser.rol === 'admin' ? `<button class="btn-small" onclick="promptAdjustFacItem('${p}', 'add')">➕ Sumar</button>` : '';
@@ -721,10 +778,8 @@
             const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}' de este facilitador?`, "1");
             if (!input || input.trim() === "") return;
             const qty = parseInt(input); if (isNaN(qty) || qty <= 0) { alert("⚠️ Inválido."); return; }
-            
             const amount = action === 'add' ? qty : -qty; const f = facilitadores[currentFacIndex];
             if (f.inventario[p] + amount < 0) { alert("⚠️ No puedes restar más de lo que tiene."); return; }
-            
             f.inventario[p] += amount; if (f.inventario[p] === 0) delete f.inventario[p];
             movimientos.unshift({ tipo: 'ajuste', codigo: 'AJUSTE', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}' a facilitador` });
             saveData(); updateAllViews();
