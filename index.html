@@ -80,6 +80,7 @@
         .btn-success { background-color: var(--primary-dark); border: 1px solid var(--accent-yellow); }
         .btn-warning { background-color: var(--accent-yellow); color: var(--primary-dark); }
         .btn-info { background-color: #0284c7; color: white; }
+        .btn-dark { background-color: var(--text-main); color: white; }
         .badge { background: var(--accent-yellow); color: var(--primary-dark); padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
@@ -95,6 +96,11 @@
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid var(--accent-yellow); padding-bottom: 10px; }
         .modal-header h3 { margin: 0; color: var(--primary-dark); }
         .close-btn { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; width: auto; }
+
+        /* CHECKLIST ITEM STYLES */
+        .check-item { padding: 10px; border-radius: 6px; margin-bottom: 8px; font-weight: bold; display: flex; align-items: center; justify-content: space-between; border: 1px solid; transition: all 0.3s; }
+        .check-pending { background: #f1f5f9; color: #64748b; border-color: #cbd5e1; }
+        .check-done { background: #dcfce7; color: #166534; border-color: #86efac; }
 
         /* MEDIA QUERIES */
         @media (max-width: 800px) {
@@ -151,10 +157,11 @@
                 <button class="nav-btn" onclick="showSection('facilitadores')">👥 Facilitadores</button>
                 <button class="nav-btn" onclick="showSection('movimientos')">📜 Movimientos</button>
                 
-                <button class="nav-btn admin-only" onclick="showSection('papelera')">🗑️ Papelera</button>
+                <button class="nav-btn admin-maestro-only" onclick="showSection('papelera')">🗑️ Papelera</button>
                 
                 <div style="margin-top: auto;">
-                    <button class="nav-btn admin-only" onclick="showSection('adminpanel')" style="border-top: 1px solid var(--border-color);">⚙️ Panel Admin</button>
+                    <!-- SOLO MAESTRO VE ESTO -->
+                    <button class="nav-btn maestro-only" onclick="showSection('adminpanel')" style="border-top: 1px solid var(--border-color);">⚙️ Panel Admin</button>
                     <button class="nav-btn" onclick="logout()" style="color: #ef4444; font-weight: bold;">🚪 Cerrar Sesión</button>
                 </div>
             </div>
@@ -180,7 +187,7 @@
                 <!-- INVENTARIO OFICINA -->
                 <div id="oficina" class="section">
                     <h2>Inventario Oficina</h2>
-                    <div class="form-row admin-only">
+                    <div class="form-row admin-maestro-only">
                         <div><label>Nuevo Producto</label><input type="text" id="new-item-name" placeholder="Ej: Libretas"></div>
                         <div><label>Cantidad Inicial</label><input type="number" id="new-item-qty" placeholder="0" min="0"></div>
                         <button class="btn-small btn-success" onclick="addOfficeItem()">+ Agregar al Catálogo</button>
@@ -190,28 +197,38 @@
                     </div>
                     <div class="table-responsive">
                         <table id="table-oficina">
-                            <thead><tr><th>Producto</th><th>Stock Actual</th><th>Ajustar Stock</th><th class="admin-only">Borrar</th></tr></thead>
+                            <thead><tr><th>Producto</th><th>Stock Actual</th><th>Ajustar Stock</th><th class="admin-maestro-only">Borrar</th></tr></thead>
                             <tbody></tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- CREAR CAJA -->
+                <!-- CREAR CAJA (REDISEÑADO) -->
                 <div id="cajas" class="section">
-                    <h2>📦 Crear Caja (Despacho)</h2>
-                    <p style="color: #64748b;">Prepara una caja de materiales. Al generarla, el stock se descontará automáticamente.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
+                        <h2>📦 Crear Caja (Despacho)</h2>
+                        <button class="btn-small btn-dark admin-maestro-only" onclick="openModalPlantillas()">⚙️ Configurar Plantillas</button>
+                    </div>
+                    <p style="color: #64748b;">Prepara una caja de materiales. Puedes usar una plantilla predefinida como guía.</p>
                     
                     <div class="panel-box" style="margin-bottom: 20px;">
                         <h3 style="margin-top: 0; color: var(--primary-dark);">Datos de Logística</h3>
-                        <div class="grid-4">
+                        <div class="grid-4" style="align-items: flex-end;">
                             <div><label style="font-weight:bold; font-size:13px;">Facilitador / Destino</label><input type="text" id="caja-fac" placeholder="Ej: Carlos Andrés" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
                             <div><label style="font-weight:bold; font-size:13px;">Fecha</label><input type="date" id="caja-fecha" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
                             <div><label style="font-weight:bold; font-size:13px;">Lugar de Envío</label><input type="text" id="caja-lugar" placeholder="Ej: Sede Maturín" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
                             <div><label style="font-weight:bold; font-size:13px;">Acción de Formación</label><input type="text" id="caja-accion" placeholder="Ej: Curso de Sistemas" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
                         </div>
+                        <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px;">
+                            <label style="font-weight:bold; font-size:13px; color: var(--primary-dark);">📋 Usar Plantilla Guía (Opcional)</label>
+                            <select id="caja-plantilla-selector" style="width:100%; max-width: 400px; padding:8px; border:1px solid #ccc; border-radius:4px; display:block; outline:none;" onchange="renderCajaChecklist()">
+                                <option value="">-- Sin plantilla (Caja libre) --</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="grid-2">
+                        <!-- Lado Izquierdo: Buscador -->
                         <div class="panel-box">
                             <h3 style="margin-top: 0; color: var(--primary-dark);">1. Buscar Producto</h3>
                             <input type="text" id="caja-search-input" class="search-input" placeholder="🔍 Buscar en inventario..." onkeyup="renderCajaSearchList()" style="max-width: 100%; margin-bottom:10px;">
@@ -223,15 +240,25 @@
                             </div>
                         </div>
                         
-                        <div class="panel-box" style="border-top: 4px solid var(--accent-yellow);">
-                            <h3 style="margin-top: 0; color: var(--primary-dark);">2. Contenido de la Caja</h3>
-                            <div class="table-responsive" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;">
-                                <table id="table-caja-cart">
-                                    <thead><tr><th>Producto</th><th>Cant.</th><th>Quitar</th></tr></thead>
-                                    <tbody></tbody>
-                                </table>
+                        <!-- Lado Derecho: Carrito y Checklist -->
+                        <div>
+                            <!-- Checklist de Plantilla (Se muestra si se selecciona una plantilla) -->
+                            <div id="caja-checklist-container" class="panel-box" style="display: none; margin-bottom: 20px; border-top: 4px solid #0ea5e9;">
+                                <h3 style="margin-top: 0; color: var(--primary-dark);">Checklist de la Plantilla</h3>
+                                <div id="caja-checklist-content" style="max-height: 150px; overflow-y: auto; padding-right: 5px;"></div>
                             </div>
-                            <button class="btn-success" onclick="generarCaja()" style="width: 100%; padding: 15px; font-size: 16px;">✅ Generar Caja y Descontar</button>
+
+                            <!-- Carrito Real -->
+                            <div class="panel-box" style="border-top: 4px solid var(--accent-yellow);">
+                                <h3 style="margin-top: 0; color: var(--primary-dark);">2. Contenido de la Caja</h3>
+                                <div class="table-responsive" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;">
+                                    <table id="table-caja-cart">
+                                        <thead><tr><th>Producto</th><th>Cant.</th><th>Quitar</th></tr></thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                                <button class="btn-success" onclick="generarCaja()" style="width: 100%; padding: 15px; font-size: 16px;">✅ Generar Caja y Descontar</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -255,7 +282,7 @@
                 <div id="facilitadores" class="section">
                     <div id="view-fac-list">
                         <h2>Gestión de Facilitadores</h2>
-                        <div class="form-row admin-only">
+                        <div class="form-row admin-maestro-only">
                             <div><label>Nombre del Facilitador</label><input type="text" id="new-fac-name" placeholder="Ej: Carlos Mendoza"></div>
                             <div><label>Cédula / ID</label><input type="text" id="new-fac-id" placeholder="Ej: V-12345678"></div>
                             <button class="btn-small btn-success" onclick="addFacilitator()">Registrar</button>
@@ -274,7 +301,7 @@
                     <div id="view-fac-detail" style="display: none;">
                         <button class="btn-small btn-dark" onclick="closeFacDetail()" style="margin-bottom: 20px;">🔙 Volver a la lista</button>
                         <h2 id="fac-detail-title">Inventario de: </h2>
-                        <div class="grid-2 admin-only">
+                        <div class="grid-2 admin-maestro-only">
                             <div class="panel-box">
                                 <h3>Trasladar material de Oficina</h3>
                                 <div style="margin-bottom: 10px;">
@@ -311,7 +338,7 @@
                 </div>
 
                 <!-- PAPELERA -->
-                <div id="papelera" class="section admin-only">
+                <div id="papelera" class="section admin-maestro-only">
                     <h2>🗑️ Papelera de Reciclaje</h2>
                     <h3 style="color: var(--primary-dark); margin-top: 25px;">Productos Eliminados</h3>
                     <div class="table-responsive">
@@ -324,8 +351,8 @@
                 </div>
 
                 <!-- PANEL ADMIN -->
-                <div id="adminpanel" class="section admin-only">
-                    <h2>⚙️ Panel de Administración</h2>
+                <div id="adminpanel" class="section maestro-only">
+                    <h2>⚙️ Panel de Administración Maestro</h2>
                     <p style="color: #64748b;">Crea y administra los accesos de tus empleados.</p>
                     
                     <div class="form-row">
@@ -335,7 +362,7 @@
                             <label>Rol de Permisos</label>
                             <select id="new-user-rol">
                                 <option value="operador">Operador (Solo Cajas y Restar)</option>
-                                <option value="admin">Administrador (Control Total)</option>
+                                <option value="admin">Administrador (Control Total SIN Admin Panel)</option>
                             </select>
                         </div>
                         <button class="btn-small btn-success" onclick="createUsuario()">+ Crear Usuario</button>
@@ -354,12 +381,14 @@
         </div>
     </div>
 
-    <!-- MODAL PARA VER CONTENIDO DE CAJA -->
+    <!-- MODALES VARIOS -->
+
+    <!-- Modal: Ver Contenido Caja -->
     <div id="modal-caja" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modal-caja-title">Contenido de la Caja</h3>
-                <button class="close-btn" onclick="closeModalCaja()">X</button>
+                <button class="close-btn" onclick="closeModal('modal-caja')">X</button>
             </div>
             <div class="table-responsive" style="margin-top: 0; box-shadow: none;">
                 <table id="table-modal-content">
@@ -370,12 +399,40 @@
         </div>
     </div>
 
-    <!-- MODAL PARA EDITAR USUARIOS -->
+    <!-- Modal: Configurar Plantillas -->
+    <div id="modal-plantillas" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚙️ Configurar Plantillas (Cajas)</h3>
+                <button class="close-btn" onclick="closeModal('modal-plantillas')">X</button>
+            </div>
+            <div class="panel-box" style="margin-bottom: 20px;">
+                <label style="font-weight:bold; font-size:13px; display:block; margin-bottom:5px;">Nombre de nueva plantilla:</label>
+                <input type="text" id="new-plantilla-name" placeholder="Ej: Caja PDT Básica" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:15px;">
+                
+                <label style="font-weight:bold; font-size:13px; display:block; margin-bottom:5px;">Selecciona qué productos debe llevar:</label>
+                <div id="plantilla-productos-list" style="max-height: 150px; overflow-y: auto; border: 1px solid #e2e8f0; padding: 10px; border-radius: 4px; margin-bottom: 15px; background: #f8fafc;">
+                    <!-- Se llena via JS -->
+                </div>
+                <button class="btn-success" onclick="createPlantilla()" style="width: 100%; padding: 10px;">💾 Guardar Plantilla</button>
+            </div>
+
+            <h4 style="margin-bottom: 5px; color: var(--primary-dark);">Plantillas Guardadas</h4>
+            <div class="table-responsive" style="max-height: 150px; overflow-y: auto; margin-top:0;">
+                <table id="table-plantillas-list">
+                    <thead><tr><th>Nombre Plantilla</th><th>Borrar</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Editar Usuario -->
     <div id="modal-edit-user" class="modal">
         <div class="modal-content" style="max-width: 400px;">
             <div class="modal-header">
                 <h3 id="modal-user-title">Editar Usuario</h3>
-                <button class="close-btn" onclick="closeModalEditUser()">X</button>
+                <button class="close-btn" onclick="closeModal('modal-edit-user')">X</button>
             </div>
             <div style="margin-bottom: 15px;">
                 <label style="display:block; font-weight:bold; margin-bottom:5px;">Nombre de Usuario</label>
@@ -389,7 +446,7 @@
                 <label style="display:block; font-weight:bold; margin-bottom:5px;">Rol de Permisos</label>
                 <select id="edit-user-rol" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
                     <option value="operador">Operador (Restringido)</option>
-                    <option value="admin">Administrador (Total)</option>
+                    <option value="admin">Administrador (Total SIN Panel Admin)</option>
                 </select>
             </div>
             <button class="btn-success" onclick="saveUserEdit()" style="width: 100%; padding: 12px;">💾 Guardar Cambios</button>
@@ -399,7 +456,7 @@
     <script>
         // VARIABLES GLOBALES
         let inventarioOficina = {}; let facilitadores = []; let papelera = { productos: {}, facilitadores: [] };
-        let movimientos = []; let usuarios = []; 
+        let movimientos = []; let usuarios = []; let plantillas = [];
         let currentUser = null; let currentFacIndex = null; let editingUserIndex = null;
         let carritoCaja = {}; 
 
@@ -409,10 +466,9 @@
             if (dLogo) dLogo.style.display = 'block'; 
             if (dTitle) dTitle.style.display = 'block'; 
         }
-        
         document.getElementById('caja-fecha').valueAsDate = new Date();
 
-        /* ----- BUSCADOR DE TABLAS ----- */
+        /* ----- BUSCADOR GENERAL DE TABLAS ----- */
         function filterTable(tableId, term) {
             const termLower = term.toLowerCase();
             const table = document.getElementById(tableId);
@@ -424,14 +480,18 @@
             }
         }
 
-        /* ----- CARGA INMEDIATA Y SINCRONIZACIÓN SILENCIOSA ----- */
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        /* ----- CARGA INMEDIATA Y SINCRONIZACIÓN ----- */
         async function loadData() {
             try {
                 const backupLocal = localStorage.getItem('coftah_datos_seguros');
                 if (backupLocal) {
                     const p = JSON.parse(backupLocal);
-                    inventarioOficina = p.oficina || {}; facilitadores = p.facilitadores || []; papelera = p.papelera || { productos: {}, facilitadores: [] };
-                    movimientos = p.movimientos || []; usuarios = p.usuarios || [];
+                    inventarioOficina = p.oficina || {}; facilitadores = p.facilitadores || []; 
+                    papelera = p.papelera || { productos: {}, facilitadores: [] };
+                    movimientos = p.movimientos || []; usuarios = p.usuarios || []; plantillas = p.plantillas || [];
                 }
             } catch(e) { console.error("Error leyendo caché local."); }
 
@@ -441,10 +501,13 @@
                 if(res.ok) {
                     const data = await res.json();
                     if(data && data.usuarios) {
-                        inventarioOficina = data.oficina || {}; facilitadores = data.facilitadores || []; papelera = data.papelera || { productos: {}, facilitadores: [] };
-                        movimientos = data.movimientos || []; usuarios = data.usuarios || [];
+                        inventarioOficina = data.oficina || {}; facilitadores = data.facilitadores || []; 
+                        papelera = data.papelera || { productos: {}, facilitadores: [] };
+                        movimientos = data.movimientos || []; usuarios = data.usuarios || []; plantillas = data.plantillas || [];
+                        
                         localStorage.setItem('coftah_datos_seguros', JSON.stringify({ 
-                            oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera, movimientos: movimientos, usuarios: usuarios 
+                            oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera, 
+                            movimientos: movimientos, usuarios: usuarios, plantillas: plantillas
                         }));
                         if (document.getElementById('dashboard-wrapper').style.display === 'flex') updateAllViews();
                     }
@@ -457,7 +520,7 @@
         }
 
         async function saveData() {
-            const dataToSave = { oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera, movimientos: movimientos, usuarios: usuarios };
+            const dataToSave = { oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera, movimientos: movimientos, usuarios: usuarios, plantillas: plantillas };
             localStorage.setItem('coftah_datos_seguros', JSON.stringify(dataToSave));
             try {
                 const res = await fetch('/api/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataToSave) });
@@ -470,36 +533,26 @@
             }
         }
 
-        /* ----- LOGIN Y ROLES CON PROTECCIÓN ----- */
+        /* ----- LOGIN Y PROTECCIÓN DE ROLES (3 NIVELES) ----- */
         function login() {
             const u = document.getElementById('username').value.trim(); 
             const p = document.getElementById('password').value.trim();
-            
             const validUser = usuarios.find(user => user.user === u && user.pass === p);
             
             if (validUser) {
-                // Validación de congelamiento
-                if(validUser.activo === false) {
-                    alert('⚠️ Tu usuario ha sido suspendido/congelado por el Administrador.'); return;
-                }
-                
+                if(validUser.activo === false) { alert('⚠️ Tu usuario ha sido suspendido/congelado por el Administrador Maestro.'); return; }
                 currentUser = validUser;
                 document.getElementById('lbl-current-user').innerText = currentUser.user;
                 document.getElementById('lbl-current-rol').innerText = currentUser.rol.toUpperCase();
-                
-                document.getElementById('login-screen').style.display = 'none'; 
-                document.getElementById('dashboard-wrapper').style.display = 'flex';
+                document.getElementById('login-screen').style.display = 'none'; document.getElementById('dashboard-wrapper').style.display = 'flex';
                 document.getElementById('username').value = ''; document.getElementById('password').value = ''; 
-                
                 applyRoles(); updateAllViews();
             } else {
-                if(u === 'admin' && p === '123') {
-                    currentUser = {user: 'admin', rol: 'admin'};
-                    document.getElementById('lbl-current-user').innerText = 'Administrador Maestro';
-                    document.getElementById('lbl-current-rol').innerText = 'ADMIN';
-                    
-                    applyRoles(); 
-                    document.getElementById('login-screen').style.display = 'none'; document.getElementById('dashboard-wrapper').style.display = 'flex'; updateAllViews();
+                if(u === 'admin' && p === '123') { // Super Admin de emergencia o primer uso
+                    currentUser = {user: 'admin', rol: 'maestro'};
+                    document.getElementById('lbl-current-user').innerText = 'Admin Maestro';
+                    document.getElementById('lbl-current-rol').innerText = 'MAESTRO';
+                    applyRoles(); document.getElementById('login-screen').style.display = 'none'; document.getElementById('dashboard-wrapper').style.display = 'flex'; updateAllViews();
                 } else { alert('Usuario o contraseña incorrectos'); }
             }
         }
@@ -507,9 +560,19 @@
         function logout() { currentUser = null; document.getElementById('dashboard-wrapper').style.display = 'none'; document.getElementById('login-screen').style.display = 'flex'; }
         
         function applyRoles() {
-            const adminElements = document.querySelectorAll('.admin-only');
-            if (currentUser.rol === 'operador') { adminElements.forEach(el => el.style.display = 'none'); } 
-            else { adminElements.forEach(el => el.style.display = ''); }
+            const adminMaestroEls = document.querySelectorAll('.admin-maestro-only');
+            const maestroEls = document.querySelectorAll('.maestro-only');
+            
+            if (currentUser.rol === 'operador') {
+                adminMaestroEls.forEach(el => el.style.display = 'none');
+                maestroEls.forEach(el => el.style.display = 'none');
+            } else if (currentUser.rol === 'admin') {
+                adminMaestroEls.forEach(el => el.style.display = '');
+                maestroEls.forEach(el => el.style.display = 'none'); // No ve panel admin
+            } else if (currentUser.rol === 'maestro') {
+                adminMaestroEls.forEach(el => el.style.display = '');
+                maestroEls.forEach(el => el.style.display = '');
+            }
         }
 
         /* ----- NAVEGACIÓN ----- */
@@ -527,32 +590,33 @@
         function updateAllViews() { 
             renderGeneral(); renderOficina(); renderCajaSearchList(); renderCajaCart();
             renderFacilitatorsList(); renderMovimientos(); renderUsuarios(); renderPapelera(); 
+            updatePlantillasSelect();
             if(currentFacIndex !== null) renderFacilitatorDetail(); 
         }
 
-        /* ----- PANEL ADMIN (CRUD USUARIOS COMPLETO) ----- */
+        /* ----- PANEL ADMIN MAESTRO (USUARIOS) ----- */
         function renderUsuarios() {
             const tbody = document.querySelector('#table-usuarios tbody'); tbody.innerHTML = '';
             usuarios.forEach((u, i) => {
                 const isMaster = u.user === 'admin';
                 const statusBadge = u.activo !== false ? `<span class="badge" style="background:#22c55e; color:white;">ACTIVO</span>` : `<span class="badge" style="background:#64748b; color:white;">CONGELADO</span>`;
+                let rolBg = u.rol === 'maestro' ? 'var(--primary-dark)' : (u.rol === 'admin' ? 'var(--accent-yellow)' : '#e2e8f0');
+                let rolColor = u.rol === 'maestro' ? 'white' : 'var(--primary-dark)';
                 
                 let btns = '';
                 if (!isMaster) {
                     const freezeText = u.activo !== false ? '❄️ Congelar' : '🔥 Descongelar';
                     btns = `<button class="btn-small btn-info" onclick="openModalEditUser(${i})">✏️ Editar</button>
                             <button class="btn-small btn-warning" onclick="toggleFreezeUsuario(${i})">${freezeText}</button>
-                            <button class="btn-small btn-danger" onclick="deleteUsuario(${i})">🗑️ Borrar</button>`;
+                            <button class="btn-small btn-danger" onclick="deleteUsuario(${i})">🗑️</button>`;
                 } else {
-                    btns = `<button class="btn-small btn-info" onclick="openModalEditUser(${i})">✏️ Editar Clave</button> <span style="font-size:12px; color:#64748b;">(Maestro Protegido)</span>`;
+                    btns = `<button class="btn-small btn-info" onclick="openModalEditUser(${i})">✏️ Clave</button> <span style="font-size:12px; color:#64748b;">(Protegido)</span>`;
                 }
 
                 tbody.innerHTML += `<tr>
-                    <td><strong>${u.user}</strong></td>
-                    <td>***</td>
-                    <td><span class="badge" style="background:${u.rol==='admin'?'var(--accent-yellow)':'#e2e8f0'}; color:var(--primary-dark)">${u.rol.toUpperCase()}</span></td>
-                    <td>${statusBadge}</td>
-                    <td>${btns}</td>
+                    <td><strong>${u.user}</strong></td><td>***</td>
+                    <td><span class="badge" style="background:${rolBg}; color:${rolColor}">${u.rol.toUpperCase()}</span></td>
+                    <td>${statusBadge}</td><td>${btns}</td>
                 </tr>`;
             });
         }
@@ -568,51 +632,28 @@
         }
 
         function openModalEditUser(i) {
-            editingUserIndex = i;
-            const u = usuarios[i];
-            document.getElementById('edit-user-name').value = u.user;
-            document.getElementById('edit-user-pass').value = u.pass;
-            document.getElementById('edit-user-rol').value = u.rol;
+            editingUserIndex = i; const u = usuarios[i];
+            document.getElementById('edit-user-name').value = u.user; document.getElementById('edit-user-pass').value = u.pass; document.getElementById('edit-user-rol').value = u.rol;
             
-            // Proteger al Admin Maestro de cambios de nombre y rol
-            if (u.user === 'admin') {
-                document.getElementById('edit-user-name').disabled = true;
-                document.getElementById('edit-user-rol').disabled = true;
-            } else {
-                document.getElementById('edit-user-name').disabled = false;
-                document.getElementById('edit-user-rol').disabled = false;
-            }
-            
-            document.getElementById('modal-edit-user').classList.add('active');
+            if (u.user === 'admin') { document.getElementById('edit-user-name').disabled = true; document.getElementById('edit-user-rol').disabled = true; } 
+            else { document.getElementById('edit-user-name').disabled = false; document.getElementById('edit-user-rol').disabled = false; }
+            openModal('modal-edit-user');
         }
 
-        function closeModalEditUser() { document.getElementById('modal-edit-user').classList.remove('active'); }
-
         function saveUserEdit() {
-            const u = document.getElementById('edit-user-name').value.trim();
-            const p = document.getElementById('edit-user-pass').value.trim();
-            const r = document.getElementById('edit-user-rol').value;
-            
+            const u = document.getElementById('edit-user-name').value.trim(); const p = document.getElementById('edit-user-pass').value.trim(); const r = document.getElementById('edit-user-rol').value;
             if(!u || !p) { alert("Los campos no pueden estar vacíos."); return; }
-            
             const isDuplicate = usuarios.find((user, idx) => user.user === u && idx !== editingUserIndex);
             if(isDuplicate) { alert("Este nombre de usuario ya está siendo utilizado."); return; }
             
-            usuarios[editingUserIndex].user = u;
-            usuarios[editingUserIndex].pass = p;
-            usuarios[editingUserIndex].rol = r;
-            
-            closeModalEditUser(); saveData(); updateAllViews(); alert("✅ Cambios guardados correctamente.");
+            usuarios[editingUserIndex].user = u; usuarios[editingUserIndex].pass = p; usuarios[editingUserIndex].rol = r;
+            closeModal('modal-edit-user'); saveData(); updateAllViews(); alert("✅ Cambios guardados correctamente.");
         }
 
-        function toggleFreezeUsuario(i) {
-            if(usuarios[i].activo === false) { usuarios[i].activo = true; } else { usuarios[i].activo = false; }
-            saveData(); updateAllViews();
-        }
+        function toggleFreezeUsuario(i) { usuarios[i].activo = usuarios[i].activo === false ? true : false; saveData(); updateAllViews(); }
+        function deleteUsuario(i) { if(confirm("¿Borrar este usuario permanentemente?")) { usuarios.splice(i, 1); saveData(); updateAllViews(); } }
 
-        function deleteUsuario(i) { if(confirm("¿Estás seguro de borrar este usuario permanentemente?")) { usuarios.splice(i, 1); saveData(); updateAllViews(); } }
-
-        /* ----- INVENTARIO GENERAL ----- */
+        /* ----- INVENTARIO GENERAL Y OFICINA ----- */
         function renderGeneral() {
             const tbody = document.querySelector('#table-general tbody'); tbody.innerHTML = '';
             let todos = new Set(Object.keys(inventarioOficina));
@@ -623,12 +664,12 @@
             });
         }
 
-        /* ----- OFICINA Y AJUSTES MANUALES ----- */
         function renderOficina() {
             const tbody = document.querySelector('#table-oficina tbody'); tbody.innerHTML = '';
             for (let p in inventarioOficina) {
-                let btnSumar = currentUser.rol === 'admin' ? `<button class="btn-small" onclick="promptAdjustOffice('${p}', 'add')">➕ Sumar</button>` : '';
-                let btnBorrar = currentUser.rol === 'admin' ? `<td><button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button></td>` : '';
+                let isElevated = (currentUser.rol === 'admin' || currentUser.rol === 'maestro');
+                let btnSumar = isElevated ? `<button class="btn-small" onclick="promptAdjustOffice('${p}', 'add')">➕ Sumar</button>` : '';
+                let btnBorrar = isElevated ? `<td><button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button></td>` : '';
                 
                 tbody.innerHTML += `<tr>
                     <td>${p}</td><td><strong>${inventarioOficina[p]}</strong></td>
@@ -644,8 +685,7 @@
             const verb = action === 'add' ? 'sumar' : 'restar';
             const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}'?`, "1");
             if (!input || input.trim() === "") return;
-            const qty = parseInt(input);
-            if (isNaN(qty) || qty <= 0) { alert("⚠️ Ingresa un número mayor a 0."); return; }
+            const qty = parseInt(input); if (isNaN(qty) || qty <= 0) { alert("⚠️ Inválido."); return; }
             const amount = action === 'add' ? qty : -qty;
             if (inventarioOficina[p] + amount < 0) { alert("⚠️ Stock insuficiente."); return; }
             
@@ -654,14 +694,85 @@
             saveData(); updateAllViews();
         }
 
-        /* ----- MÓDULO CAJAS ----- */
+        /* ----- MÓDULO CAJAS Y PLANTILLAS (NUEVO REDISEÑO) ----- */
+        function openModalPlantillas() {
+            renderPlantillasList();
+            const div = document.getElementById('plantilla-productos-list'); div.innerHTML = '';
+            let hasProd = false;
+            for(let p in inventarioOficina) {
+                div.innerHTML += `<label style="display:block; margin-bottom:6px; cursor:pointer;"><input type="checkbox" class="chk-plantilla-prod" value="${p}"> ${p}</label>`;
+                hasProd = true;
+            }
+            if(!hasProd) div.innerHTML = `<span style="color:#64748b; font-size:13px;">Registra productos en la oficina primero.</span>`;
+            openModal('modal-plantillas');
+        }
+
+        function createPlantilla() {
+            const name = document.getElementById('new-plantilla-name').value.trim();
+            if(!name) return alert('Debes darle un nombre a la plantilla.');
+            
+            const checkboxes = document.querySelectorAll('.chk-plantilla-prod:checked');
+            const prods = Array.from(checkboxes).map(c => c.value);
+            if(prods.length === 0) return alert('Selecciona al menos un producto para la plantilla.');
+            
+            plantillas.push({ id: Date.now(), nombre: name, productos: prods });
+            document.getElementById('new-plantilla-name').value = '';
+            // Limpiar checks
+            document.querySelectorAll('.chk-plantilla-prod').forEach(c => c.checked = false);
+            
+            saveData(); renderPlantillasList(); updatePlantillasSelect(); alert("Plantilla guardada.");
+        }
+
+        function renderPlantillasList() {
+            const tbody = document.querySelector('#table-plantillas-list tbody'); tbody.innerHTML = '';
+            plantillas.forEach((pl, i) => {
+                tbody.innerHTML += `<tr><td><strong>${pl.nombre}</strong> <span style="font-size:12px; color:#64748b;">(${pl.productos.length} items)</span></td>
+                <td><button class="btn-small btn-danger" onclick="deletePlantilla(${i})">X</button></td></tr>`;
+            });
+        }
+
+        function deletePlantilla(i) {
+            if(confirm("¿Borrar plantilla?")) { plantillas.splice(i, 1); saveData(); renderPlantillasList(); updatePlantillasSelect(); }
+        }
+
+        function updatePlantillasSelect() {
+            const sel = document.getElementById('caja-plantilla-selector');
+            const actualVal = sel.value;
+            sel.innerHTML = '<option value="">-- Sin plantilla (Caja libre) --</option>';
+            plantillas.forEach(pl => { sel.innerHTML += `<option value="${pl.id}">${pl.nombre}</option>`; });
+            // Mantener selección si aún existe
+            if(plantillas.find(x => x.id == actualVal)) sel.value = actualVal;
+            renderCajaChecklist();
+        }
+
+        function renderCajaChecklist() {
+            const pid = document.getElementById('caja-plantilla-selector').value;
+            const container = document.getElementById('caja-checklist-container');
+            const content = document.getElementById('caja-checklist-content');
+            
+            if(!pid) { container.style.display = 'none'; return; }
+            
+            container.style.display = 'block';
+            const pl = plantillas.find(x => x.id == pid);
+            content.innerHTML = '';
+            
+            pl.productos.forEach(p => {
+                const inCart = carritoCaja[p] !== undefined; // Si ya se añadió al carrito al menos 1
+                if(inCart) {
+                    content.innerHTML += `<div class="check-item check-done"><span>${p}</span> <span>✅ Listo</span></div>`;
+                } else {
+                    content.innerHTML += `<div class="check-item check-pending"><span>${p}</span> <span>⏳ Falta</span></div>`;
+                }
+            });
+        }
+
         function renderCajaSearchList() {
             const term = document.getElementById('caja-search-input').value.toLowerCase();
             const tbody = document.querySelector('#table-caja-search tbody'); tbody.innerHTML = '';
             for (let p in inventarioOficina) {
                 if (p.toLowerCase().includes(term) && inventarioOficina[p] > 0) {
                     tbody.innerHTML += `<tr><td><strong>${p}</strong> <span style="color:#64748b; font-size:12px;">(Disp: ${inventarioOficina[p]})</span></td>
-                        <td style="text-align:right;"><button class="btn-small" onclick="promptCajaItem('${p}')">+ Añadir</button></td></tr>`;
+                        <td style="text-align:right;"><button class="btn-small btn-dark" onclick="promptCajaItem('${p}')">+ Añadir</button></td></tr>`;
                 }
             }
         }
@@ -669,16 +780,17 @@
         function promptCajaItem(p) {
             const input = prompt(`¿Cuántas unidades de '${p}' enviarás en esta caja? (Stock: ${inventarioOficina[p]})`, "1");
             if (!input || input.trim() === "") return;
-            const qty = parseInt(input);
-            if (isNaN(qty) || qty <= 0) { alert("Número inválido."); return; }
+            const qty = parseInt(input); if (isNaN(qty) || qty <= 0) return alert("Número inválido."); 
             const inCart = carritoCaja[p] || 0;
-            if ((inCart + qty) > inventarioOficina[p]) { alert("⚠️ No hay suficiente stock en oficina para añadir esa cantidad."); return; }
+            if ((inCart + qty) > inventarioOficina[p]) return alert("⚠️ No hay suficiente stock en oficina."); 
             
-            carritoCaja[p] = inCart + qty; renderCajaCart();
+            carritoCaja[p] = inCart + qty; 
+            renderCajaCart();
+            renderCajaChecklist(); // Actualiza el color verde en el checklist
             document.getElementById('caja-search-input').value = ''; renderCajaSearchList();
         }
 
-        function removeCajaItem(p) { delete carritoCaja[p]; renderCajaCart(); }
+        function removeCajaItem(p) { delete carritoCaja[p]; renderCajaCart(); renderCajaChecklist(); }
 
         function renderCajaCart() {
             const tbody = document.querySelector('#table-caja-cart tbody'); tbody.innerHTML = '';
@@ -697,7 +809,8 @@
             const lug = document.getElementById('caja-lugar').value.trim() || 'No especificado';
             const acc = document.getElementById('caja-accion').value.trim() || 'No especificado';
 
-            if (Object.keys(carritoCaja).length === 0) { alert("⚠️ La caja está vacía. Añade productos primero."); return; }
+            if (Object.keys(carritoCaja).length === 0) return alert("⚠️ La caja está vacía."); 
+            
             for (let p in carritoCaja) inventarioOficina[p] -= carritoCaja[p];
 
             const cajasCount = movimientos.filter(m => m.tipo === 'caja').length + 1;
@@ -706,90 +819,63 @@
             movimientos.unshift({ tipo: 'caja', codigo: codCaja, facilitador: fac, fecha: fec, lugar: lug, accion: acc, operador: currentUser.user, contenido: { ...carritoCaja } });
 
             carritoCaja = {}; document.getElementById('caja-fac').value = ''; document.getElementById('caja-lugar').value = ''; document.getElementById('caja-accion').value = '';
-            alert(`✅ ¡Caja ${codCaja} generada con éxito! El inventario ha sido descontado.`);
+            document.getElementById('caja-plantilla-selector').value = ''; renderCajaChecklist();
+            
+            alert(`✅ ¡Caja ${codCaja} generada con éxito!`);
             saveData(); updateAllViews(); showSection('movimientos');
         }
 
-        /* ----- MOVIMIENTOS E HISTORIAL ----- */
+        /* ----- MOVIMIENTOS Y DEMÁS (SIN CAMBIOS ESTRUCTURALES) ----- */
         function renderMovimientos() {
             const tbody = document.querySelector('#table-movimientos tbody'); tbody.innerHTML = '';
             movimientos.forEach((m, i) => {
-                let btnDetalle = m.tipo === 'caja' 
-                    ? `<button class="btn-small btn-info" onclick='openModalCaja(${i})'>📦 Ver Contenido</button>` 
-                    : `<span style="font-size:13px; color:#64748b;">${m.detalle}</span>`;
-
-                tbody.innerHTML += `<tr>
-                    <td><strong>${m.codigo}</strong></td><td>${m.facilitador}</td><td>${m.fecha}</td>
-                    <td>${m.lugar}</td><td>${m.accion}</td>
-                    <td><span class="badge" style="background:#e2e8f0; color:var(--primary-dark)">${m.operador}</span></td>
-                    <td>${btnDetalle}</td>
-                </tr>`;
+                let btnDetalle = m.tipo === 'caja' ? `<button class="btn-small btn-info" onclick="openModalCaja(${i})">📦 Ver Contenido</button>` : `<span style="font-size:13px; color:#64748b;">${m.detalle}</span>`;
+                tbody.innerHTML += `<tr><td><strong>${m.codigo}</strong></td><td>${m.facilitador}</td><td>${m.fecha}</td><td>${m.lugar}</td><td>${m.accion}</td><td><span class="badge" style="background:#e2e8f0; color:var(--primary-dark)">${m.operador}</span></td><td>${btnDetalle}</td></tr>`;
             });
         }
+        function openModalCaja(index) { const mov = movimientos[index]; document.getElementById('modal-caja-title').innerText = `Contenido: ${mov.codigo}`; const tbody = document.querySelector('#table-modal-content tbody'); tbody.innerHTML = ''; for (let p in mov.contenido) tbody.innerHTML += `<tr><td><strong>${p}</strong></td><td><span class="badge">${mov.contenido[p]} Unds.</span></td></tr>`; openModal('modal-caja'); }
 
-        function openModalCaja(index) {
-            const mov = movimientos[index]; document.getElementById('modal-caja-title').innerText = `Contenido: ${mov.codigo} (${mov.facilitador})`;
-            const tbody = document.querySelector('#table-modal-content tbody'); tbody.innerHTML = '';
-            for (let p in mov.contenido) tbody.innerHTML += `<tr><td><strong>${p}</strong></td><td><span class="badge">${mov.contenido[p]} Unds.</span></td></tr>`;
-            document.getElementById('modal-caja').classList.add('active');
-        }
-        function closeModalCaja() { document.getElementById('modal-caja').classList.remove('active'); }
-
-        /* ----- FACILITADORES ----- */
         function countTotalItems(inv) { return Object.values(inv).reduce((a, b) => a + b, 0); }
         function renderFacilitatorsList() {
             const tbody = document.querySelector('#table-fac-list tbody'); tbody.innerHTML = '';
             facilitadores.forEach((f, i) => {
-                let btnBorrar = currentUser.rol === 'admin' ? `<button class="btn-small btn-danger" onclick="deleteFacilitator(${i})">🗑️</button>` : '';
-                tbody.innerHTML += `<tr><td>${f.id}</td><td><strong>${f.nombre}</strong></td><td><span class="badge" style="background:#e2e8f0; color:#1e293b">${countTotalItems(f.inventario)} items</span></td>
-                    <td><button class="btn-small" onclick="openFacDetail(${i})">Gestionar</button>${btnBorrar}</td></tr>`;
+                let btnBorrar = (currentUser.rol === 'admin' || currentUser.rol === 'maestro') ? `<button class="btn-small btn-danger" onclick="deleteFacilitator(${i})">🗑️</button>` : '';
+                tbody.innerHTML += `<tr><td>${f.id}</td><td><strong>${f.nombre}</strong></td><td><span class="badge" style="background:#e2e8f0; color:#1e293b">${countTotalItems(f.inventario)} items</span></td><td><button class="btn-small" onclick="openFacDetail(${i})">Gestionar</button>${btnBorrar}</td></tr>`;
             });
         }
         function addFacilitator() { const n = document.getElementById('new-fac-name').value.trim(); const id = document.getElementById('new-fac-id').value.trim(); if (n && id) { facilitadores.push({ id, nombre: n, inventario: {} }); document.getElementById('new-fac-name').value = ''; document.getElementById('new-fac-id').value = ''; saveData(); updateAllViews(); } }
         function deleteFacilitator(i) { if(confirm('¿Enviar a papelera?')) { papelera.facilitadores.push(facilitadores.splice(i, 1)[0]); saveData(); updateAllViews(); } }
-        
         function openFacDetail(i) { currentFacIndex = i; document.getElementById('view-fac-list').style.display = 'none'; document.getElementById('view-fac-detail').style.display = 'block'; renderFacilitatorDetail(); }
         function closeFacDetail() { currentFacIndex = null; document.getElementById('view-fac-list').style.display = 'block'; document.getElementById('view-fac-detail').style.display = 'none'; }
-
+        
         function renderSelectProductosOficina() {
-            const term = (document.getElementById('search-fac-prod')?.value || '').toLowerCase();
-            const sel = document.getElementById('fac-sel-producto');
-            if(!sel) return;
-            sel.innerHTML = ''; let hasMatches = false;
-            for (let p in inventarioOficina) {
-                if (p.toLowerCase().includes(term) && inventarioOficina[p] > 0) { sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`; hasMatches = true; }
-            }
+            const term = (document.getElementById('search-fac-prod')?.value || '').toLowerCase(); const sel = document.getElementById('fac-sel-producto'); if(!sel) return; sel.innerHTML = ''; let hasMatches = false;
+            for (let p in inventarioOficina) { if (p.toLowerCase().includes(term) && inventarioOficina[p] > 0) { sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`; hasMatches = true; } }
             if (!hasMatches) sel.innerHTML = `<option value="">Sin stock / No existe</option>`;
         }
-
         function renderFacilitatorDetail() {
             const f = facilitadores[currentFacIndex]; document.getElementById('fac-detail-title').innerText = `Inventario de: ${f.nombre}`;
             if(document.getElementById('search-fac-prod')) { document.getElementById('search-fac-prod').value = ''; renderSelectProductosOficina(); }
             const tbody = document.querySelector('#table-fac-inventory tbody'); tbody.innerHTML = '';
             for (let p in f.inventario) {
-                let btnSumar = currentUser.rol === 'admin' ? `<button class="btn-small" onclick="promptAdjustFacItem('${p}', 'add')">➕ Sumar</button>` : '';
-                tbody.innerHTML += `<tr><td>${p}</td><td><strong>${f.inventario[p]}</strong></td>
-                    <td>${btnSumar}<button class="btn-small btn-warning" onclick="promptAdjustFacItem('${p}', 'sub')">➖ Restar</button><button class="btn-small btn-danger admin-only" onclick="returnToOffice('${p}')" style="display:${currentUser.rol==='admin'?'inline-block':'none'}">Devolver Todo</button></td></tr>`;
+                let isElevated = (currentUser.rol === 'admin' || currentUser.rol === 'maestro');
+                let btnSumar = isElevated ? `<button class="btn-small" onclick="promptAdjustFacItem('${p}', 'add')">➕ Sumar</button>` : '';
+                tbody.innerHTML += `<tr><td>${p}</td><td><strong>${f.inventario[p]}</strong></td><td>${btnSumar}<button class="btn-small btn-warning" onclick="promptAdjustFacItem('${p}', 'sub')">➖ Restar</button><button class="btn-small btn-danger admin-maestro-only" onclick="returnToOffice('${p}')" style="display:${isElevated?'inline-block':'none'}">Devolver Todo</button></td></tr>`;
             }
         }
-
         function promptAdjustFacItem(p, action) {
-            const verb = action === 'add' ? 'sumar' : 'restar';
-            const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}' de este facilitador?`, "1");
-            if (!input || input.trim() === "") return;
-            const qty = parseInt(input); if (isNaN(qty) || qty <= 0) { alert("⚠️ Inválido."); return; }
+            const verb = action === 'add' ? 'sumar' : 'restar'; const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}' de este facilitador?`, "1"); if (!input || input.trim() === "") return;
+            const qty = parseInt(input); if (isNaN(qty) || qty <= 0) return alert("⚠️ Inválido."); 
             const amount = action === 'add' ? qty : -qty; const f = facilitadores[currentFacIndex];
-            if (f.inventario[p] + amount < 0) { alert("⚠️ No puedes restar más de lo que tiene."); return; }
+            if (f.inventario[p] + amount < 0) return alert("⚠️ No puedes restar más de lo que tiene."); 
             f.inventario[p] += amount; if (f.inventario[p] === 0) delete f.inventario[p];
             movimientos.unshift({ tipo: 'ajuste', codigo: 'AJUSTE', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}' a facilitador` });
             saveData(); updateAllViews();
         }
-
         function transferFromOffice() { const p = document.getElementById('fac-sel-producto').value; const q = parseInt(document.getElementById('fac-transfer-qty').value); if (p && q > 0) { if (inventarioOficina[p] >= q) { inventarioOficina[p] -= q; const f = facilitadores[currentFacIndex]; f.inventario[p] = (f.inventario[p] || 0) + q; movimientos.unshift({ tipo: 'ajuste', codigo: 'TRASLADO', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Trasladó ${q} '${p}' desde oficina` }); saveData(); updateAllViews(); } else alert('Stock insuficiente en oficina'); } }
         function addDirectProduct() { const p = document.getElementById('fac-direct-prod').value.trim(); const q = parseInt(document.getElementById('fac-direct-qty').value); if (p && q > 0) { if (inventarioOficina[p] === undefined) inventarioOficina[p] = 0; const f = facilitadores[currentFacIndex]; f.inventario[p] = (f.inventario[p] || 0) + q; movimientos.unshift({ tipo: 'ajuste', codigo: 'ASIGNACIÓN DIRECTA', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Creó y asignó ${q} '${p}'` }); saveData(); updateAllViews(); } }
         function returnToOffice(p) { const f = facilitadores[currentFacIndex]; if (f.inventario[p] > 0) { inventarioOficina[p] = (inventarioOficina[p] || 0) + f.inventario[p]; movimientos.unshift({ tipo: 'ajuste', codigo: 'DEVOLUCIÓN', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Devolvió todo el stock (${f.inventario[p]}) de '${p}' a oficina` }); delete f.inventario[p]; saveData(); updateAllViews(); } }
 
-        /* ----- PAPELERA ----- */
         function renderPapelera() {
             const tP = document.querySelector('#table-papelera-prod tbody'); tP.innerHTML = '';
             for(let p in papelera.productos) { tP.innerHTML += `<tr><td>${p}</td><td>${papelera.productos[p]}</td><td><button class="btn-small btn-success" onclick="restoreProduct('${p}')">♻️</button><button class="btn-small btn-danger" onclick="hardDeleteProduct('${p}')">❌</button></td></tr>`; }
@@ -801,7 +887,6 @@
         function restoreFacilitator(i) { facilitadores.push(papelera.facilitadores.splice(i, 1)[0]); saveData(); updateAllViews(); }
         function hardDeleteFacilitator(i) { if(confirm('¿Eliminar permanente?')) { papelera.facilitadores.splice(i, 1); saveData(); updateAllViews(); } }
 
-        // INICIAR EL SISTEMA INMEDIATAMENTE
         setTimeout(loadData, 50);
     </script>
 </body>
