@@ -249,7 +249,7 @@
                                 <input type="text" id="caja-search-input" class="search-input" placeholder="🔍 Escribe para buscar producto..." onkeyup="renderCajaSearchList()" style="margin-bottom:10px;">
                                 <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
                                     <table id="table-caja-search">
-                                        <thead><tr><th>Producto Disponible</th><th>Acción</th></tr></thead>
+                                        <thead><tr><th>Producto</th><th>Stock Oficina</th><th style="text-align:right;">Acción</th></tr></thead>
                                         <tbody></tbody>
                                     </table>
                                 </div>
@@ -279,7 +279,7 @@
                     </div>
                     <div class="table-responsive">
                         <table id="table-movimientos">
-                            <thead><tr><th>Código</th><th>Facilitador / Destino</th><th>Fecha</th><th>Lugar</th><th>Acción de Form.</th><th>Operador</th><th>Detalle / Contenido</th></tr></thead>
+                            <thead><tr><th>Código</th><th>Facilitador / Destino</th><th>Fecha</th><th>Lugar</th><th>Acción de Form.</th><th>Operador</th><th>Detalle / Contenido</th><th class="maestro-only">Acción</th></tr></thead>
                             <tbody></tbody>
                         </table>
                     </div>
@@ -464,13 +464,18 @@
         document.getElementById('caja-fecha').valueAsDate = new Date();
 
         /* ----- BUSCADOR SEGURO Y COMPATIBLE ----- */
+        function removeAccents(str) {
+            try { return str.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); } 
+            catch(e) { return str; } 
+        }
+
         function filterTable(tableId, term) {
-            const termLower = term.toLowerCase();
+            const termLower = removeAccents(term.toLowerCase());
             const table = document.getElementById(tableId);
             if (!table) return;
             const trs = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
             for (let i = 0; i < trs.length; i++) {
-                const textData = (trs[i].textContent || trs[i].innerText).toLowerCase();
+                const textData = removeAccents((trs[i].textContent || trs[i].innerText).toLowerCase());
                 trs[i].style.display = textData.indexOf(termLower) > -1 ? "" : "none";
             }
         }
@@ -525,14 +530,12 @@
             const validUser = usuarios.find(user => user.user === u && user.pass === p);
             
             if (validUser) {
-                // Si el usuario congelado no es admin, bloquéalo
+                // Validación para congelados (El admin nunca puede ser congelado)
                 if(validUser.activo === false && u !== 'admin') { alert('⚠️ Tu usuario ha sido suspendido.'); return; }
                 
                 currentUser = validUser;
-                // PROTECCIÓN MAESTRA: Forzar que el usuario 'admin' siempre tenga el rol 'maestro'
-                if (currentUser.user === 'admin') {
-                    currentUser.rol = 'maestro';
-                }
+                // LLAVE MAESTRA: Si entra "admin", fuerza su nivel de seguridad a maestro absoluto
+                if (currentUser.user === 'admin') { currentUser.rol = 'maestro'; }
 
                 document.getElementById('lbl-current-user').innerText = currentUser.user; 
                 document.getElementById('lbl-current-rol').innerText = currentUser.rol.toUpperCase();
@@ -540,7 +543,7 @@
                 document.getElementById('username').value = ''; document.getElementById('password').value = ''; 
                 applyRoles(); updateAllViews();
             } else {
-                if(u === 'admin' && p === '123') { // Super Admin Fallback
+                if(u === 'admin' && p === '123') { // Fallback de emergencia
                     currentUser = {user: 'admin', rol: 'maestro'};
                     document.getElementById('lbl-current-user').innerText = 'Admin Maestro'; document.getElementById('lbl-current-rol').innerText = 'MAESTRO';
                     applyRoles(); document.getElementById('login-screen').style.display = 'none'; document.getElementById('dashboard-wrapper').style.display = 'flex'; updateAllViews();
@@ -579,14 +582,14 @@
             const tbody = document.querySelector('#table-usuarios tbody'); tbody.innerHTML = '';
             usuarios.forEach((u, i) => {
                 const isMaster = u.user === 'admin'; const statusBadge = u.activo !== false ? `<span class="badge" style="background:#22c55e; color:white;">ACTIVO</span>` : `<span class="badge" style="background:#64748b; color:white;">CONGELADO</span>`;
-                let rolBg = u.rol === 'maestro' || u.user === 'admin' ? 'var(--primary-dark)' : (u.rol === 'admin' ? 'var(--accent-yellow)' : '#e2e8f0'); let rolColor = u.rol === 'maestro' || u.user === 'admin' ? 'white' : 'var(--primary-dark)';
+                let rolBg = (u.rol === 'maestro' || isMaster) ? 'var(--primary-dark)' : (u.rol === 'admin' ? 'var(--accent-yellow)' : '#e2e8f0'); 
+                let rolColor = (u.rol === 'maestro' || isMaster) ? 'white' : 'var(--primary-dark)';
                 let btns = '';
                 if (!isMaster) {
                     const freezeText = u.activo !== false ? '❄️ Congelar' : '🔥 Descongelar';
                     btns = `<button class="btn-small btn-info" onclick="openModalEditUser(${i})">✏️ Editar</button><button class="btn-small btn-warning" onclick="toggleFreezeUsuario(${i})">${freezeText}</button><button class="btn-small btn-danger" onclick="deleteUsuario(${i})">🗑️</button>`;
                 } else { btns = `<button class="btn-small btn-info" onclick="openModalEditUser(${i})">✏️ Clave</button> <span style="font-size:12px; color:#64748b;">(Protegido)</span>`; }
                 
-                // Mostrar "maestro" visualmente si es admin, aunque en BD diga otra cosa
                 let showRol = isMaster ? 'MAESTRO' : u.rol.toUpperCase();
                 tbody.innerHTML += `<tr><td><strong>${u.user}</strong></td><td>***</td><td><span class="badge" style="background:${rolBg}; color:${rolColor}">${showRol}</span></td><td>${statusBadge}</td><td>${btns}</td></tr>`;
             });
@@ -616,7 +619,7 @@
         function deleteOfficeItem(p) { if(confirm(`¿Enviar '${p}' a papelera?`)) { papelera.productos[p] = inventarioOficina[p]; delete inventarioOficina[p]; saveData(); updateAllViews(); } }
         function promptAdjustOffice(p, action) { const verb = action === 'add' ? 'sumar' : 'restar'; const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}'?`, "1"); if (!input || input.trim() === "") return; const qty = parseInt(input); if (isNaN(qty) || qty <= 0) return alert("⚠️ Inválido."); const amount = action === 'add' ? qty : -qty; if (inventarioOficina[p] + amount < 0) return alert("⚠️ Stock insuficiente."); inventarioOficina[p] += amount; movimientos.unshift({ tipo: 'ajuste', codigo: 'AJUSTE', facilitador: '-', fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}'` }); saveData(); updateAllViews(); }
 
-        /* ----- MÓDULO CAJAS ----- */
+        /* ----- MÓDULO CAJAS (REDISEÑADO) ----- */
         function nextCajaStep() {
             document.getElementById('caja-step-1').style.display = 'none';
             document.getElementById('caja-step-2').style.display = 'block';
@@ -636,9 +639,9 @@
             if(!hasProd) div.innerHTML = `<span style="color:#64748b; font-size:13px;">Registra productos en la oficina primero.</span>`; openModal('modal-plantillas');
         }
         function filterPlantillaModal() {
-            const term = document.getElementById('modal-plantilla-search').value.toLowerCase();
+            const term = removeAccents(document.getElementById('modal-plantilla-search').value.toLowerCase());
             document.querySelectorAll('.lbl-modal-prod').forEach(lbl => {
-                const txt = lbl.querySelector('.prod-text').innerText.toLowerCase();
+                const txt = removeAccents(lbl.querySelector('.prod-text').innerText.toLowerCase());
                 lbl.style.display = txt.includes(term) ? "block" : "none";
             });
         }
@@ -671,29 +674,40 @@
             });
         }
 
-        // BUSCADOR CORREGIDO - AHORA MUESTRA LA LISTA SIEMPRE
+        // BUSCADOR DE CAJAS INFALIBLE CON COLUMNA DE STOCK
         function renderCajaSearchList() {
             const input = document.getElementById('caja-search-input');
-            const term = input ? input.value.toLowerCase() : "";
+            const term = input ? removeAccents(input.value.toLowerCase().trim()) : "";
             const tbody = document.querySelector('#table-caja-search tbody');
             if (!tbody) return;
             
-            tbody.innerHTML = '';
+            let html = '';
             let count = 0;
             
             for (let p in inventarioOficina) {
                 const stock = parseInt(inventarioOficina[p]) || 0;
-                if (stock > 0) {
-                    if (p.toLowerCase().includes(term) || term === "") {
-                        tbody.innerHTML += `<tr><td><strong>${p}</strong> <span style="color:#64748b; font-size:12px;">(Disp: ${stock})</span></td>
-                            <td style="text-align:right;"><button class="btn-small btn-dark" onclick="promptCajaItem('${p}')">+ Añadir</button></td></tr>`;
-                        count++;
-                    }
+                const pName = removeAccents(p.toLowerCase());
+                
+                if (pName.includes(term)) {
+                    // Si no hay stock, muestra el producto pero bloquea el botón
+                    const btnHtml = stock > 0 
+                        ? `<button class="btn-small btn-dark" onclick="promptCajaItem('${p}')">+ Añadir</button>` 
+                        : `<span style="color:#ef4444; font-size:13px; font-weight:bold;">Agotado</span>`;
+
+                    html += `<tr>
+                        <td><strong>${p}</strong></td>
+                        <td><span class="badge" style="background:#e2e8f0; color:#1e293b;">${stock}</span></td>
+                        <td style="text-align:right;">${btnHtml}</td>
+                    </tr>`;
+                    count++;
                 }
             }
+            
             if (count === 0) {
-                tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#64748b;">No hay productos con stock disponibles.</td></tr>`;
+                html = `<tr><td colspan="3" style="text-align:center; color:#64748b; padding:20px;">No se encontraron productos registrados en el sistema.</td></tr>`;
             }
+            
+            tbody.innerHTML = html;
         }
 
         function promptCajaItem(p) {
@@ -723,12 +737,32 @@
             saveData(); updateAllViews(); prevCajaStep(); showSection('movimientos');
         }
 
-        /* ----- DEMÁS FUNCIONES ----- */
+        /* ----- MOVIMIENTOS E HISTORIAL (CON BORRADO PARA MAESTRO) ----- */
         function renderMovimientos() {
             const tbody = document.querySelector('#table-movimientos tbody'); tbody.innerHTML = '';
-            movimientos.forEach((m, i) => { let btnDetalle = m.tipo === 'caja' ? `<button class="btn-small btn-info" onclick="openModalCaja(${i})">📦 Ver Contenido</button>` : `<span style="font-size:13px; color:#64748b;">${m.detalle}</span>`; tbody.innerHTML += `<tr><td><strong>${m.codigo}</strong></td><td>${m.facilitador}</td><td>${m.fecha}</td><td>${m.lugar}</td><td>${m.accion}</td><td><span class="badge" style="background:#e2e8f0; color:var(--primary-dark)">${m.operador}</span></td><td>${btnDetalle}</td></tr>`; });
+            movimientos.forEach((m, i) => { 
+                let btnDetalle = m.tipo === 'caja' ? `<button class="btn-small btn-info" onclick="openModalCaja(${i})">📦 Ver Contenido</button>` : `<span style="font-size:13px; color:#64748b;">${m.detalle}</span>`; 
+                let tdBorrar = `<td class="maestro-only" style="display:${currentUser.rol === 'maestro' ? 'table-cell' : 'none'}"><button class="btn-small btn-danger" onclick="deleteMovimiento(${i})">🗑️</button></td>`;
+                
+                tbody.innerHTML += `<tr>
+                    <td><strong>${m.codigo}</strong></td><td>${m.facilitador}</td><td>${m.fecha}</td>
+                    <td>${m.lugar}</td><td>${m.accion}</td>
+                    <td><span class="badge" style="background:#e2e8f0; color:var(--primary-dark)">${m.operador}</span></td>
+                    <td>${btnDetalle}</td>${tdBorrar}
+                </tr>`; 
+            });
         }
         function openModalCaja(index) { const mov = movimientos[index]; document.getElementById('modal-caja-title').innerText = `Contenido: ${mov.codigo}`; const tbody = document.querySelector('#table-modal-content tbody'); tbody.innerHTML = ''; for (let p in mov.contenido) tbody.innerHTML += `<tr><td><strong>${p}</strong></td><td><span class="badge">${mov.contenido[p]} Unds.</span></td></tr>`; openModal('modal-caja'); }
+        
+        // Función exclusiva para borrar el historial
+        function deleteMovimiento(i) {
+            if(confirm('¿Borrar este registro del historial? (Nota: Esto NO altera el stock en el inventario, solo limpia el registro visual del historial)')) {
+                movimientos.splice(i, 1);
+                saveData();
+                updateAllViews();
+            }
+        }
+
         function countTotalItems(inv) { return Object.values(inv).reduce((a, b) => a + b, 0); }
         function renderFacilitatorsList() {
             const tbody = document.querySelector('#table-fac-list tbody'); tbody.innerHTML = '';
@@ -739,7 +773,7 @@
         function openFacDetail(i) { currentFacIndex = i; document.getElementById('view-fac-list').style.display = 'none'; document.getElementById('view-fac-detail').style.display = 'block'; renderFacilitatorDetail(); }
         function closeFacDetail() { currentFacIndex = null; document.getElementById('view-fac-list').style.display = 'block'; document.getElementById('view-fac-detail').style.display = 'none'; }
         
-        function renderSelectProductosOficina() { const term = (document.getElementById('search-fac-prod')?.value || '').toLowerCase(); const sel = document.getElementById('fac-sel-producto'); if(!sel) return; sel.innerHTML = ''; let hasMatches = false; for (let p in inventarioOficina) { if (p.toLowerCase().includes(term) && inventarioOficina[p] > 0) { sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`; hasMatches = true; } } if (!hasMatches) sel.innerHTML = `<option value="">Sin stock / No existe</option>`; }
+        function renderSelectProductosOficina() { const term = removeAccents((document.getElementById('search-fac-prod')?.value || '').toLowerCase()); const sel = document.getElementById('fac-sel-producto'); if(!sel) return; sel.innerHTML = ''; let hasMatches = false; for (let p in inventarioOficina) { if (removeAccents(p.toLowerCase()).includes(term) && inventarioOficina[p] > 0) { sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`; hasMatches = true; } } if (!hasMatches) sel.innerHTML = `<option value="">Sin stock / No existe</option>`; }
         function renderFacilitatorDetail() {
             const f = facilitadores[currentFacIndex]; document.getElementById('fac-detail-title').innerText = `Inventario de: ${f.nombre}`; if(document.getElementById('search-fac-prod')) { document.getElementById('search-fac-prod').value = ''; renderSelectProductosOficina(); }
             const tbody = document.querySelector('#table-fac-inventory tbody'); tbody.innerHTML = '';
