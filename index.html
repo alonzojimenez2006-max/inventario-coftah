@@ -59,12 +59,12 @@
         
         /* BUSCADORES */
         .search-container { margin: 15px 0; }
-        .search-input { width: 100%; max-width: 500px; padding: 12px 15px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; border-left: 4px solid var(--accent-yellow); outline: none; background-color: var(--bg-light); }
-        .search-input:focus { border-color: var(--primary-dark); background-color: var(--bg-white); }
+        .search-input { width: 100%; max-width: 100%; padding: 12px 15px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; border-left: 4px solid var(--accent-yellow); outline: none; background-color: var(--bg-light); transition: 0.3s; }
+        .search-input:focus { border-color: var(--primary-dark); background-color: var(--bg-white); box-shadow: 0 0 5px rgba(0,40,85,0.2); }
 
         /* TABLAS CELULARES */
-        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; background-color: var(--bg-white); margin-top: 10px; border: 2px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: block; }
-        table { width: 100%; min-width: 700px; border-collapse: collapse; }
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; background-color: var(--bg-white); margin-top: 10px; border: 2px solid var(--border-color); border-radius: 8px; display: block; }
+        table { width: 100%; min-width: 600px; border-collapse: collapse; }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
         th { background-color: var(--primary-dark); color: white; font-weight: 600; border-bottom: 4px solid var(--accent-yellow); }
         tr:hover { background-color: var(--bg-light); }
@@ -97,18 +97,21 @@
         .modal-header h3 { margin: 0; color: var(--primary-dark); }
         .close-btn { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; width: auto; }
 
-        /* CHECKLIST ITEM STYLES */
-        .check-item { padding: 10px; border-radius: 6px; margin-bottom: 8px; font-weight: bold; display: flex; align-items: center; justify-content: space-between; border: 1px solid; transition: all 0.3s; }
-        .check-pending { background: #f1f5f9; color: #64748b; border-color: #cbd5e1; }
-        .check-done { background: #dcfce7; color: #166534; border-color: #86efac; }
+        /* NUEVO CHECKLIST HORIZONTAL (PÍLDORAS) */
+        .checklist-wrapper { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding: 15px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; }
+        .chk-badge { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; border: 1px solid; display: inline-flex; align-items: center; gap: 5px; }
+        .chk-pending { background: #f1f5f9; color: #64748b; border-color: #cbd5e1; }
+        .chk-done { background: #dcfce7; color: #166534; border-color: #86efac; box-shadow: 0 2px 4px rgba(22,101,52,0.1); }
 
         /* MEDIA QUERIES */
+        @media (max-width: 1000px) {
+            .grid-2, .grid-4 { grid-template-columns: 1fr; }
+        }
         @media (max-width: 800px) {
             .mobile-header { display: flex; }
             .sidebar { position: fixed; left: -280px; height: 100%; transition: left 0.3s ease; }
             .sidebar.open { left: 0; }
             .main-content { padding: 15px; padding-bottom: 50px; }
-            .grid-2, .grid-4 { grid-template-columns: 1fr; }
             .form-row { flex-direction: column; align-items: stretch; }
             .form-row button { margin-top: 10px; width: 100%; }
         }
@@ -174,7 +177,7 @@
                     <h2>Inventario General</h2>
                     <p style="color: #64748b;">Visión global del stock físico en oficina y el material distribuido.</p>
                     <div class="search-container">
-                        <input type="text" class="search-input" placeholder="🔍 Buscar producto..." onkeyup="filterTable('table-general', this.value)">
+                        <input type="text" class="search-input" placeholder="🔍 Buscar producto en general..." onkeyup="filterTable('table-general', this.value)">
                     </div>
                     <div class="table-responsive">
                         <table id="table-general">
@@ -203,62 +206,64 @@
                     </div>
                 </div>
 
-                <!-- CREAR CAJA (REDISEÑADO) -->
+                <!-- CREAR CAJA (REDISEÑO TOTAL) -->
                 <div id="cajas" class="section">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
                         <h2>📦 Crear Caja (Despacho)</h2>
                         <button class="btn-small btn-dark admin-maestro-only" onclick="openModalPlantillas()">⚙️ Configurar Plantillas</button>
                     </div>
-                    <p style="color: #64748b;">Prepara una caja de materiales. Puedes usar una plantilla predefinida como guía.</p>
+                    <p style="color: #64748b;">Prepara una caja. Selecciona una plantilla opcional para guiarte en el armado.</p>
                     
+                    <!-- BLOQUE 1: LOGÍSTICA Y PLANTILLA -->
                     <div class="panel-box" style="margin-bottom: 20px;">
                         <h3 style="margin-top: 0; color: var(--primary-dark);">Datos de Logística</h3>
-                        <div class="grid-4" style="align-items: flex-end;">
+                        <div class="grid-4" style="align-items: flex-end; margin-bottom: 10px;">
                             <div><label style="font-weight:bold; font-size:13px;">Facilitador / Destino</label><input type="text" id="caja-fac" placeholder="Ej: Carlos Andrés" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
                             <div><label style="font-weight:bold; font-size:13px;">Fecha</label><input type="date" id="caja-fecha" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
                             <div><label style="font-weight:bold; font-size:13px;">Lugar de Envío</label><input type="text" id="caja-lugar" placeholder="Ej: Sede Maturín" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
                             <div><label style="font-weight:bold; font-size:13px;">Acción de Formación</label><input type="text" id="caja-accion" placeholder="Ej: Curso de Sistemas" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
                         </div>
-                        <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px;">
+
+                        <!-- Selector y Checklist Horizontal -->
+                        <div style="border-top: 1px dashed #ccc; padding-top: 15px;">
                             <label style="font-weight:bold; font-size:13px; color: var(--primary-dark);">📋 Usar Plantilla Guía (Opcional)</label>
                             <select id="caja-plantilla-selector" style="width:100%; max-width: 400px; padding:8px; border:1px solid #ccc; border-radius:4px; display:block; outline:none;" onchange="renderCajaChecklist()">
                                 <option value="">-- Sin plantilla (Caja libre) --</option>
                             </select>
+                            
+                            <!-- El Checklist como Píldoras -->
+                            <div id="caja-checklist-container" style="display: none;">
+                                <div id="caja-checklist-content" class="checklist-wrapper">
+                                    <!-- Las píldoras de productos se generan aquí -->
+                                </div>
+                            </div>
                         </div>
                     </div>
 
+                    <!-- BLOQUE 2: BÚSQUEDA Y CARRITO (APILADOS DE FORMA LIMPIA) -->
                     <div class="grid-2">
-                        <!-- Lado Izquierdo: Buscador -->
+                        <!-- Buscador -->
                         <div class="panel-box">
-                            <h3 style="margin-top: 0; color: var(--primary-dark);">1. Buscar Producto</h3>
-                            <input type="text" id="caja-search-input" class="search-input" placeholder="🔍 Buscar en inventario..." onkeyup="renderCajaSearchList()" style="max-width: 100%; margin-bottom:10px;">
+                            <h3 style="margin-top: 0; color: var(--primary-dark);">1. Buscar y Añadir</h3>
+                            <input type="text" id="caja-search-input" class="search-input" placeholder="🔍 Buscar producto en inventario..." onkeyup="renderCajaSearchList()" style="margin-bottom:10px;">
                             <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
                                 <table id="table-caja-search">
-                                    <thead><tr><th>Producto (Disp.)</th><th>Acción</th></tr></thead>
+                                    <thead><tr><th>Producto Disponible</th><th>Acción</th></tr></thead>
                                     <tbody></tbody>
                                 </table>
                             </div>
                         </div>
                         
-                        <!-- Lado Derecho: Carrito y Checklist -->
-                        <div>
-                            <!-- Checklist de Plantilla (Se muestra si se selecciona una plantilla) -->
-                            <div id="caja-checklist-container" class="panel-box" style="display: none; margin-bottom: 20px; border-top: 4px solid #0ea5e9;">
-                                <h3 style="margin-top: 0; color: var(--primary-dark);">Checklist de la Plantilla</h3>
-                                <div id="caja-checklist-content" style="max-height: 150px; overflow-y: auto; padding-right: 5px;"></div>
+                        <!-- Carrito -->
+                        <div class="panel-box" style="border-top: 4px solid var(--accent-yellow);">
+                            <h3 style="margin-top: 0; color: var(--primary-dark);">2. Contenido de la Caja</h3>
+                            <div class="table-responsive" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;">
+                                <table id="table-caja-cart">
+                                    <thead><tr><th>Producto</th><th>Cant.</th><th>Quitar</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
                             </div>
-
-                            <!-- Carrito Real -->
-                            <div class="panel-box" style="border-top: 4px solid var(--accent-yellow);">
-                                <h3 style="margin-top: 0; color: var(--primary-dark);">2. Contenido de la Caja</h3>
-                                <div class="table-responsive" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;">
-                                    <table id="table-caja-cart">
-                                        <thead><tr><th>Producto</th><th>Cant.</th><th>Quitar</th></tr></thead>
-                                        <tbody></tbody>
-                                    </table>
-                                </div>
-                                <button class="btn-success" onclick="generarCaja()" style="width: 100%; padding: 15px; font-size: 16px;">✅ Generar Caja y Descontar</button>
-                            </div>
+                            <button class="btn-success" onclick="generarCaja()" style="width: 100%; padding: 15px; font-size: 16px;">✅ Generar Caja y Descontar</button>
                         </div>
                     </div>
                 </div>
@@ -350,7 +355,7 @@
                     </div>
                 </div>
 
-                <!-- PANEL ADMIN -->
+                <!-- PANEL ADMIN MAESTRO -->
                 <div id="adminpanel" class="section maestro-only">
                     <h2>⚙️ Panel de Administración Maestro</h2>
                     <p style="color: #64748b;">Crea y administra los accesos de tus empleados.</p>
@@ -399,22 +404,26 @@
         </div>
     </div>
 
-    <!-- Modal: Configurar Plantillas -->
+    <!-- Modal: Configurar Plantillas con Buscador Integrado -->
     <div id="modal-plantillas" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
-                <h3>⚙️ Configurar Plantillas (Cajas)</h3>
+                <h3>⚙️ Crear Plantilla Nueva</h3>
                 <button class="close-btn" onclick="closeModal('modal-plantillas')">X</button>
             </div>
             <div class="panel-box" style="margin-bottom: 20px;">
-                <label style="font-weight:bold; font-size:13px; display:block; margin-bottom:5px;">Nombre de nueva plantilla:</label>
-                <input type="text" id="new-plantilla-name" placeholder="Ej: Caja PDT Básica" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:15px;">
+                <label style="font-weight:bold; font-size:13px; display:block; margin-bottom:5px;">Nombre de la plantilla:</label>
+                <input type="text" id="new-plantilla-name" placeholder="Ej: Caja PDT Básica" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:15px; outline:none;">
                 
-                <label style="font-weight:bold; font-size:13px; display:block; margin-bottom:5px;">Selecciona qué productos debe llevar:</label>
-                <div id="plantilla-productos-list" style="max-height: 150px; overflow-y: auto; border: 1px solid #e2e8f0; padding: 10px; border-radius: 4px; margin-bottom: 15px; background: #f8fafc;">
-                    <!-- Se llena via JS -->
+                <label style="font-weight:bold; font-size:13px; display:block; margin-bottom:5px;">Selecciona los productos que debe llevar:</label>
+                
+                <!-- Buscador de productos dentro del modal -->
+                <input type="text" id="modal-plantilla-search" placeholder="🔍 Buscar producto para agregar..." onkeyup="filterPlantillaModal()" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:10px; outline:none; background:#f8fafc;">
+                
+                <div id="plantilla-productos-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; padding: 10px; border-radius: 4px; margin-bottom: 15px; background: #fff;">
+                    <!-- Se llena via JS con Checkboxes -->
                 </div>
-                <button class="btn-success" onclick="createPlantilla()" style="width: 100%; padding: 10px;">💾 Guardar Plantilla</button>
+                <button class="btn-success" onclick="createPlantilla()" style="width: 100%; padding: 12px; font-size: 15px;">💾 Guardar Plantilla</button>
             </div>
 
             <h4 style="margin-bottom: 5px; color: var(--primary-dark);">Plantillas Guardadas</h4>
@@ -461,22 +470,25 @@
         let carritoCaja = {}; 
 
         if(window.innerWidth > 800) { 
-            const dLogo = document.getElementById('desktop-logo');
-            const dTitle = document.getElementById('desktop-title');
-            if (dLogo) dLogo.style.display = 'block'; 
-            if (dTitle) dTitle.style.display = 'block'; 
+            const dLogo = document.getElementById('desktop-logo'); const dTitle = document.getElementById('desktop-title');
+            if (dLogo) dLogo.style.display = 'block'; if (dTitle) dTitle.style.display = 'block'; 
         }
         document.getElementById('caja-fecha').valueAsDate = new Date();
 
+        /* ----- FUNCIÓN CLAVE: ELIMINAR ACENTOS PARA BUSCADORES PERFECTOS ----- */
+        function removeAccents(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
         /* ----- BUSCADOR GENERAL DE TABLAS ----- */
         function filterTable(tableId, term) {
-            const termLower = term.toLowerCase();
+            const termLower = removeAccents(term.toLowerCase());
             const table = document.getElementById(tableId);
             if (!table) return;
             const trs = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
             for (let i = 0; i < trs.length; i++) {
-                const textData = trs[i].textContent || trs[i].innerText;
-                trs[i].style.display = textData.toLowerCase().indexOf(termLower) > -1 ? "" : "none";
+                const textData = removeAccents((trs[i].textContent || trs[i].innerText).toLowerCase());
+                trs[i].style.display = textData.indexOf(termLower) > -1 ? "" : "none";
             }
         }
 
@@ -489,8 +501,7 @@
                 const backupLocal = localStorage.getItem('coftah_datos_seguros');
                 if (backupLocal) {
                     const p = JSON.parse(backupLocal);
-                    inventarioOficina = p.oficina || {}; facilitadores = p.facilitadores || []; 
-                    papelera = p.papelera || { productos: {}, facilitadores: [] };
+                    inventarioOficina = p.oficina || {}; facilitadores = p.facilitadores || []; papelera = p.papelera || { productos: {}, facilitadores: [] };
                     movimientos = p.movimientos || []; usuarios = p.usuarios || []; plantillas = p.plantillas || [];
                 }
             } catch(e) { console.error("Error leyendo caché local."); }
@@ -501,19 +512,14 @@
                 if(res.ok) {
                     const data = await res.json();
                     if(data && data.usuarios) {
-                        inventarioOficina = data.oficina || {}; facilitadores = data.facilitadores || []; 
-                        papelera = data.papelera || { productos: {}, facilitadores: [] };
+                        inventarioOficina = data.oficina || {}; facilitadores = data.facilitadores || []; papelera = data.papelera || { productos: {}, facilitadores: [] };
                         movimientos = data.movimientos || []; usuarios = data.usuarios || []; plantillas = data.plantillas || [];
                         
-                        localStorage.setItem('coftah_datos_seguros', JSON.stringify({ 
-                            oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera, 
-                            movimientos: movimientos, usuarios: usuarios, plantillas: plantillas
-                        }));
+                        localStorage.setItem('coftah_datos_seguros', JSON.stringify({ oficina: inventarioOficina, facilitadores: facilitadores, papelera: papelera, movimientos: movimientos, usuarios: usuarios, plantillas: plantillas }));
                         if (document.getElementById('dashboard-wrapper').style.display === 'flex') updateAllViews();
                     }
                 }
             } catch (err) {
-                console.error("Modo offline activado");
                 document.getElementById('sync-status').style.display = 'block';
                 document.getElementById('sync-status').innerText = '⚠️ Modo sin conexión (Datos a salvo localmente)';
             } finally { document.getElementById('loading-msg').style.display = 'none'; }
@@ -533,14 +539,13 @@
             }
         }
 
-        /* ----- LOGIN Y PROTECCIÓN DE ROLES (3 NIVELES) ----- */
+        /* ----- LOGIN Y PROTECCIÓN DE ROLES ----- */
         function login() {
-            const u = document.getElementById('username').value.trim(); 
-            const p = document.getElementById('password').value.trim();
+            const u = document.getElementById('username').value.trim(); const p = document.getElementById('password').value.trim();
             const validUser = usuarios.find(user => user.user === u && user.pass === p);
             
             if (validUser) {
-                if(validUser.activo === false) { alert('⚠️ Tu usuario ha sido suspendido/congelado por el Administrador Maestro.'); return; }
+                if(validUser.activo === false) { alert('⚠️ Tu usuario ha sido suspendido/congelado.'); return; }
                 currentUser = validUser;
                 document.getElementById('lbl-current-user').innerText = currentUser.user;
                 document.getElementById('lbl-current-rol').innerText = currentUser.rol.toUpperCase();
@@ -548,10 +553,9 @@
                 document.getElementById('username').value = ''; document.getElementById('password').value = ''; 
                 applyRoles(); updateAllViews();
             } else {
-                if(u === 'admin' && p === '123') { // Super Admin de emergencia o primer uso
+                if(u === 'admin' && p === '123') { // Super Admin original
                     currentUser = {user: 'admin', rol: 'maestro'};
-                    document.getElementById('lbl-current-user').innerText = 'Admin Maestro';
-                    document.getElementById('lbl-current-rol').innerText = 'MAESTRO';
+                    document.getElementById('lbl-current-user').innerText = 'Admin Maestro'; document.getElementById('lbl-current-rol').innerText = 'MAESTRO';
                     applyRoles(); document.getElementById('login-screen').style.display = 'none'; document.getElementById('dashboard-wrapper').style.display = 'flex'; updateAllViews();
                 } else { alert('Usuario o contraseña incorrectos'); }
             }
@@ -568,10 +572,10 @@
                 maestroEls.forEach(el => el.style.display = 'none');
             } else if (currentUser.rol === 'admin') {
                 adminMaestroEls.forEach(el => el.style.display = '');
-                maestroEls.forEach(el => el.style.display = 'none'); // No ve panel admin
+                maestroEls.forEach(el => el.style.display = 'none'); // Bloqueado de panel admin
             } else if (currentUser.rol === 'maestro') {
                 adminMaestroEls.forEach(el => el.style.display = '');
-                maestroEls.forEach(el => el.style.display = '');
+                maestroEls.forEach(el => el.style.display = ''); // Ve todo
             }
         }
 
@@ -606,18 +610,11 @@
                 let btns = '';
                 if (!isMaster) {
                     const freezeText = u.activo !== false ? '❄️ Congelar' : '🔥 Descongelar';
-                    btns = `<button class="btn-small btn-info" onclick="openModalEditUser(${i})">✏️ Editar</button>
-                            <button class="btn-small btn-warning" onclick="toggleFreezeUsuario(${i})">${freezeText}</button>
-                            <button class="btn-small btn-danger" onclick="deleteUsuario(${i})">🗑️</button>`;
+                    btns = `<button class="btn-small btn-info" onclick="openModalEditUser(${i})">✏️ Editar</button><button class="btn-small btn-warning" onclick="toggleFreezeUsuario(${i})">${freezeText}</button><button class="btn-small btn-danger" onclick="deleteUsuario(${i})">🗑️</button>`;
                 } else {
                     btns = `<button class="btn-small btn-info" onclick="openModalEditUser(${i})">✏️ Clave</button> <span style="font-size:12px; color:#64748b;">(Protegido)</span>`;
                 }
-
-                tbody.innerHTML += `<tr>
-                    <td><strong>${u.user}</strong></td><td>***</td>
-                    <td><span class="badge" style="background:${rolBg}; color:${rolColor}">${u.rol.toUpperCase()}</span></td>
-                    <td>${statusBadge}</td><td>${btns}</td>
-                </tr>`;
+                tbody.innerHTML += `<tr><td><strong>${u.user}</strong></td><td>***</td><td><span class="badge" style="background:${rolBg}; color:${rolColor}">${u.rol.toUpperCase()}</span></td><td>${statusBadge}</td><td>${btns}</td></tr>`;
             });
         }
 
@@ -625,8 +622,7 @@
             const u = document.getElementById('new-user-name').value.trim(); const p = document.getElementById('new-user-pass').value.trim(); const r = document.getElementById('new-user-rol').value;
             if (u && p) {
                 if(usuarios.find(x => x.user === u)) { alert("El usuario ya existe"); return; }
-                usuarios.push({user: u, pass: p, rol: r, activo: true}); 
-                document.getElementById('new-user-name').value = ''; document.getElementById('new-user-pass').value = '';
+                usuarios.push({user: u, pass: p, rol: r, activo: true}); document.getElementById('new-user-name').value = ''; document.getElementById('new-user-pass').value = '';
                 saveData(); updateAllViews(); alert("Usuario creado");
             } else alert("Llena los campos");
         }
@@ -634,7 +630,6 @@
         function openModalEditUser(i) {
             editingUserIndex = i; const u = usuarios[i];
             document.getElementById('edit-user-name').value = u.user; document.getElementById('edit-user-pass').value = u.pass; document.getElementById('edit-user-rol').value = u.rol;
-            
             if (u.user === 'admin') { document.getElementById('edit-user-name').disabled = true; document.getElementById('edit-user-rol').disabled = true; } 
             else { document.getElementById('edit-user-name').disabled = false; document.getElementById('edit-user-rol').disabled = false; }
             openModal('modal-edit-user');
@@ -645,9 +640,8 @@
             if(!u || !p) { alert("Los campos no pueden estar vacíos."); return; }
             const isDuplicate = usuarios.find((user, idx) => user.user === u && idx !== editingUserIndex);
             if(isDuplicate) { alert("Este nombre de usuario ya está siendo utilizado."); return; }
-            
             usuarios[editingUserIndex].user = u; usuarios[editingUserIndex].pass = p; usuarios[editingUserIndex].rol = r;
-            closeModal('modal-edit-user'); saveData(); updateAllViews(); alert("✅ Cambios guardados correctamente.");
+            closeModal('modal-edit-user'); saveData(); updateAllViews(); alert("✅ Cambios guardados.");
         }
 
         function toggleFreezeUsuario(i) { usuarios[i].activo = usuarios[i].activo === false ? true : false; saveData(); updateAllViews(); }
@@ -670,12 +664,7 @@
                 let isElevated = (currentUser.rol === 'admin' || currentUser.rol === 'maestro');
                 let btnSumar = isElevated ? `<button class="btn-small" onclick="promptAdjustOffice('${p}', 'add')">➕ Sumar</button>` : '';
                 let btnBorrar = isElevated ? `<td><button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button></td>` : '';
-                
-                tbody.innerHTML += `<tr>
-                    <td>${p}</td><td><strong>${inventarioOficina[p]}</strong></td>
-                    <td>${btnSumar} <button class="btn-small btn-warning" onclick="promptAdjustOffice('${p}', 'sub')">➖ Restar</button></td>
-                    ${btnBorrar}
-                </tr>`;
+                tbody.innerHTML += `<tr><td>${p}</td><td><strong>${inventarioOficina[p]}</strong></td><td>${btnSumar} <button class="btn-small btn-warning" onclick="promptAdjustOffice('${p}', 'sub')">➖ Restar</button></td>${btnBorrar}</tr>`;
             }
         }
         function addOfficeItem() { const n = document.getElementById('new-item-name').value.trim(); const q = parseInt(document.getElementById('new-item-qty').value) || 0; if (n && inventarioOficina[n] === undefined) { inventarioOficina[n] = q; document.getElementById('new-item-name').value = ''; saveData(); updateAllViews(); } }
@@ -688,36 +677,44 @@
             const qty = parseInt(input); if (isNaN(qty) || qty <= 0) { alert("⚠️ Inválido."); return; }
             const amount = action === 'add' ? qty : -qty;
             if (inventarioOficina[p] + amount < 0) { alert("⚠️ Stock insuficiente."); return; }
-            
             inventarioOficina[p] += amount;
             movimientos.unshift({ tipo: 'ajuste', codigo: 'AJUSTE', facilitador: '-', fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}'` });
             saveData(); updateAllViews();
         }
 
-        /* ----- MÓDULO CAJAS Y PLANTILLAS (NUEVO REDISEÑO) ----- */
+        /* ----- MÓDULO CAJAS Y PLANTILLAS (MODAL CON BUSCADOR) ----- */
         function openModalPlantillas() {
             renderPlantillasList();
+            document.getElementById('modal-plantilla-search').value = '';
             const div = document.getElementById('plantilla-productos-list'); div.innerHTML = '';
             let hasProd = false;
             for(let p in inventarioOficina) {
-                div.innerHTML += `<label style="display:block; margin-bottom:6px; cursor:pointer;"><input type="checkbox" class="chk-plantilla-prod" value="${p}"> ${p}</label>`;
+                div.innerHTML += `<label class="lbl-modal-prod" style="display:block; margin-bottom:8px; padding:5px; cursor:pointer; border-bottom:1px solid #f1f5f9;"><input type="checkbox" class="chk-plantilla-prod" value="${p}"> <span class="prod-text">${p}</span></label>`;
                 hasProd = true;
             }
             if(!hasProd) div.innerHTML = `<span style="color:#64748b; font-size:13px;">Registra productos en la oficina primero.</span>`;
             openModal('modal-plantillas');
         }
 
+        // Buscador dentro del Modal de Plantillas
+        function filterPlantillaModal() {
+            const term = removeAccents(document.getElementById('modal-plantilla-search').value.toLowerCase());
+            const labels = document.querySelectorAll('.lbl-modal-prod');
+            labels.forEach(lbl => {
+                const txt = removeAccents(lbl.querySelector('.prod-text').innerText.toLowerCase());
+                lbl.style.display = txt.includes(term) ? "block" : "none";
+            });
+        }
+
         function createPlantilla() {
             const name = document.getElementById('new-plantilla-name').value.trim();
             if(!name) return alert('Debes darle un nombre a la plantilla.');
-            
             const checkboxes = document.querySelectorAll('.chk-plantilla-prod:checked');
             const prods = Array.from(checkboxes).map(c => c.value);
-            if(prods.length === 0) return alert('Selecciona al menos un producto para la plantilla.');
+            if(prods.length === 0) return alert('Selecciona al menos un producto.');
             
             plantillas.push({ id: Date.now(), nombre: name, productos: prods });
             document.getElementById('new-plantilla-name').value = '';
-            // Limpiar checks
             document.querySelectorAll('.chk-plantilla-prod').forEach(c => c.checked = false);
             
             saveData(); renderPlantillasList(); updatePlantillasSelect(); alert("Plantilla guardada.");
@@ -725,52 +722,45 @@
 
         function renderPlantillasList() {
             const tbody = document.querySelector('#table-plantillas-list tbody'); tbody.innerHTML = '';
-            plantillas.forEach((pl, i) => {
-                tbody.innerHTML += `<tr><td><strong>${pl.nombre}</strong> <span style="font-size:12px; color:#64748b;">(${pl.productos.length} items)</span></td>
-                <td><button class="btn-small btn-danger" onclick="deletePlantilla(${i})">X</button></td></tr>`;
-            });
+            plantillas.forEach((pl, i) => { tbody.innerHTML += `<tr><td><strong>${pl.nombre}</strong> <span style="font-size:12px; color:#64748b;">(${pl.productos.length} items)</span></td><td><button class="btn-small btn-danger" onclick="deletePlantilla(${i})">X</button></td></tr>`; });
         }
-
-        function deletePlantilla(i) {
-            if(confirm("¿Borrar plantilla?")) { plantillas.splice(i, 1); saveData(); renderPlantillasList(); updatePlantillasSelect(); }
-        }
+        function deletePlantilla(i) { if(confirm("¿Borrar plantilla?")) { plantillas.splice(i, 1); saveData(); renderPlantillasList(); updatePlantillasSelect(); } }
 
         function updatePlantillasSelect() {
-            const sel = document.getElementById('caja-plantilla-selector');
-            const actualVal = sel.value;
+            const sel = document.getElementById('caja-plantilla-selector'); const actualVal = sel.value;
             sel.innerHTML = '<option value="">-- Sin plantilla (Caja libre) --</option>';
             plantillas.forEach(pl => { sel.innerHTML += `<option value="${pl.id}">${pl.nombre}</option>`; });
-            // Mantener selección si aún existe
             if(plantillas.find(x => x.id == actualVal)) sel.value = actualVal;
             renderCajaChecklist();
         }
 
+        /* --- CHECKLIST VISUAL (PÍLDORAS) --- */
         function renderCajaChecklist() {
             const pid = document.getElementById('caja-plantilla-selector').value;
             const container = document.getElementById('caja-checklist-container');
             const content = document.getElementById('caja-checklist-content');
             
             if(!pid) { container.style.display = 'none'; return; }
-            
             container.style.display = 'block';
             const pl = plantillas.find(x => x.id == pid);
             content.innerHTML = '';
             
             pl.productos.forEach(p => {
-                const inCart = carritoCaja[p] !== undefined; // Si ya se añadió al carrito al menos 1
+                const inCart = carritoCaja[p] !== undefined; 
                 if(inCart) {
-                    content.innerHTML += `<div class="check-item check-done"><span>${p}</span> <span>✅ Listo</span></div>`;
+                    content.innerHTML += `<div class="chk-badge chk-done"><span>${p}</span> <span>✅</span></div>`;
                 } else {
-                    content.innerHTML += `<div class="check-item check-pending"><span>${p}</span> <span>⏳ Falta</span></div>`;
+                    content.innerHTML += `<div class="chk-badge chk-pending"><span>${p}</span> <span>⏳</span></div>`;
                 }
             });
         }
 
         function renderCajaSearchList() {
-            const term = document.getElementById('caja-search-input').value.toLowerCase();
+            const term = removeAccents(document.getElementById('caja-search-input').value.toLowerCase());
             const tbody = document.querySelector('#table-caja-search tbody'); tbody.innerHTML = '';
             for (let p in inventarioOficina) {
-                if (p.toLowerCase().includes(term) && inventarioOficina[p] > 0) {
+                const pName = removeAccents(p.toLowerCase());
+                if (pName.includes(term) && inventarioOficina[p] > 0) {
                     tbody.innerHTML += `<tr><td><strong>${p}</strong> <span style="color:#64748b; font-size:12px;">(Disp: ${inventarioOficina[p]})</span></td>
                         <td style="text-align:right;"><button class="btn-small btn-dark" onclick="promptCajaItem('${p}')">+ Añadir</button></td></tr>`;
                 }
@@ -785,8 +775,7 @@
             if ((inCart + qty) > inventarioOficina[p]) return alert("⚠️ No hay suficiente stock en oficina."); 
             
             carritoCaja[p] = inCart + qty; 
-            renderCajaCart();
-            renderCajaChecklist(); // Actualiza el color verde en el checklist
+            renderCajaCart(); renderCajaChecklist(); 
             document.getElementById('caja-search-input').value = ''; renderCajaSearchList();
         }
 
@@ -810,7 +799,6 @@
             const acc = document.getElementById('caja-accion').value.trim() || 'No especificado';
 
             if (Object.keys(carritoCaja).length === 0) return alert("⚠️ La caja está vacía."); 
-            
             for (let p in carritoCaja) inventarioOficina[p] -= carritoCaja[p];
 
             const cajasCount = movimientos.filter(m => m.tipo === 'caja').length + 1;
@@ -825,7 +813,7 @@
             saveData(); updateAllViews(); showSection('movimientos');
         }
 
-        /* ----- MOVIMIENTOS Y DEMÁS (SIN CAMBIOS ESTRUCTURALES) ----- */
+        /* ----- MOVIMIENTOS Y DEMÁS ----- */
         function renderMovimientos() {
             const tbody = document.querySelector('#table-movimientos tbody'); tbody.innerHTML = '';
             movimientos.forEach((m, i) => {
@@ -849,8 +837,8 @@
         function closeFacDetail() { currentFacIndex = null; document.getElementById('view-fac-list').style.display = 'block'; document.getElementById('view-fac-detail').style.display = 'none'; }
         
         function renderSelectProductosOficina() {
-            const term = (document.getElementById('search-fac-prod')?.value || '').toLowerCase(); const sel = document.getElementById('fac-sel-producto'); if(!sel) return; sel.innerHTML = ''; let hasMatches = false;
-            for (let p in inventarioOficina) { if (p.toLowerCase().includes(term) && inventarioOficina[p] > 0) { sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`; hasMatches = true; } }
+            const term = removeAccents((document.getElementById('search-fac-prod')?.value || '').toLowerCase()); const sel = document.getElementById('fac-sel-producto'); if(!sel) return; sel.innerHTML = ''; let hasMatches = false;
+            for (let p in inventarioOficina) { if (removeAccents(p.toLowerCase()).includes(term) && inventarioOficina[p] > 0) { sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`; hasMatches = true; } }
             if (!hasMatches) sel.innerHTML = `<option value="">Sin stock / No existe</option>`;
         }
         function renderFacilitatorDetail() {
