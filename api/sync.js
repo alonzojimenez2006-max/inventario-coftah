@@ -9,7 +9,8 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
         try {
             const client = await pool.connect();
-            const result = await client.query('SELECT oficina, facilitadores, papelera, movimientos, usuarios FROM sistema_inventario WHERE id = 1');
+            // Se agregó "plantillas" a la lectura
+            const result = await client.query('SELECT oficina, facilitadores, papelera, movimientos, usuarios, plantillas FROM sistema_inventario WHERE id = 1');
             client.release();
             
             if (result.rows.length > 0) {
@@ -20,7 +21,8 @@ export default async function handler(req, res) {
                     facilitadores: [], 
                     papelera: { productos: {}, facilitadores: [] },
                     movimientos: [],
-                    usuarios: [{ user: "admin", pass: "123", rol: "admin" }]
+                    usuarios: [{ user: "admin", pass: "123", rol: "maestro" }],
+                    plantillas: [] // Nuevo módulo
                 });
             }
         } catch (err) {
@@ -30,24 +32,27 @@ export default async function handler(req, res) {
     } 
     else if (req.method === 'POST') {
         try {
-            const { oficina, facilitadores, papelera, movimientos, usuarios } = req.body;
+            const { oficina, facilitadores, papelera, movimientos, usuarios, plantillas } = req.body;
             const client = await pool.connect();
             
+            // Se agregó "plantillas" al guardado seguro
             await client.query(`
-                INSERT INTO sistema_inventario (id, oficina, facilitadores, papelera, movimientos, usuarios)
-                VALUES (1, $1, $2, $3, $4, $5)
+                INSERT INTO sistema_inventario (id, oficina, facilitadores, papelera, movimientos, usuarios, plantillas)
+                VALUES (1, $1, $2, $3, $4, $5, $6)
                 ON CONFLICT (id) DO UPDATE 
                 SET oficina = EXCLUDED.oficina, 
                     facilitadores = EXCLUDED.facilitadores, 
                     papelera = EXCLUDED.papelera,
                     movimientos = EXCLUDED.movimientos,
-                    usuarios = EXCLUDED.usuarios;
+                    usuarios = EXCLUDED.usuarios,
+                    plantillas = EXCLUDED.plantillas;
             `, [
                 JSON.stringify(oficina || {}), 
                 JSON.stringify(facilitadores || []), 
                 JSON.stringify(papelera || {productos:{}, facilitadores:[]}),
                 JSON.stringify(movimientos || []),
-                JSON.stringify(usuarios || [{ user: "admin", pass: "123", rol: "admin" }])
+                JSON.stringify(usuarios || [{ user: "admin", pass: "123", rol: "maestro" }]),
+                JSON.stringify(plantillas || [])
             ]);
             
             client.release();
