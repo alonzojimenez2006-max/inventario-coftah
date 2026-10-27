@@ -25,6 +25,7 @@
         .input-group { margin-bottom: 20px; }
         .input-group label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: bold; color: var(--primary-dark); }
         .input-group input, .input-group select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 16px; background-color: #fff; }
+        .input-group input:disabled { background-color: #e2e8f0; color: #64748b; cursor: not-allowed; }
         
         button { width: 100%; padding: 12px; background-color: var(--primary-dark); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; transition: all 0.3s; }
         button:hover { background-color: var(--accent-yellow); color: var(--primary-dark); }
@@ -74,6 +75,7 @@
         .form-row > div { flex: 1; min-width: 200px; }
         .form-row label { display: block; margin-bottom: 6px; font-weight: bold; color: var(--primary-dark); font-size: 14px; }
         .form-row input, .form-row select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 15px; outline: none; }
+        .form-row input:disabled { background-color: #e2e8f0; color: #64748b; cursor: not-allowed; }
         
         .btn-small { width: auto; padding: 8px 14px; font-size: 13px; margin-right: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; background-color: var(--primary-dark); color: white; }
         .btn-danger { background-color: #ef4444; color: white; }
@@ -81,7 +83,9 @@
         .btn-warning { background-color: var(--accent-yellow); color: var(--primary-dark); }
         .btn-info { background-color: #0284c7; color: white; }
         .btn-dark { background-color: var(--text-main); color: white; }
+        
         .badge { background: var(--accent-yellow); color: var(--primary-dark); padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; }
+        .badge-activo { background: #0ea5e9; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
         .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
@@ -188,7 +192,14 @@
                 <div id="oficina" class="section">
                     <h2>Inventario Oficina</h2>
                     <div class="form-row admin-maestro-only">
-                        <div><label>Nuevo Producto</label><input type="text" id="new-item-name" placeholder="Ej: Libretas"></div>
+                        <div><label>Nuevo Producto / Activo</label><input type="text" id="new-item-name" placeholder="Ej: Libretas o Proyector"></div>
+                        <div>
+                            <label>Tipo de Registro</label>
+                            <select id="new-item-type" onchange="toggleQtyInput('new-item-qty', this.value)">
+                                <option value="consumible">Material Consumible</option>
+                                <option value="activo">Activo Fijo (Registro Único)</option>
+                            </select>
+                        </div>
                         <div><label>Cantidad Inicial</label><input type="number" id="new-item-qty" placeholder="0" min="0"></div>
                         <button class="btn-small btn-success" onclick="addOfficeItem()">+ Agregar al Catálogo</button>
                     </div>
@@ -246,7 +257,7 @@
                             <!-- Buscador Integrado -->
                             <div class="panel-box">
                                 <h3 style="margin-top: 0; color: var(--primary-dark);">Paso 2: Buscar y Añadir</h3>
-                                <input type="text" id="caja-search-input" class="search-input" placeholder="🔍 Escribe para buscar producto..." onkeyup="renderCajaSearchList()" style="margin-bottom:10px;">
+                                <input type="text" id="caja-search-input" class="search-input" placeholder="🔍 Escribe para buscar producto o activo..." onkeyup="renderCajaSearchList()" style="margin-bottom:10px;">
                                 <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
                                     <table id="table-caja-search">
                                         <thead><tr><th>Producto</th><th>Stock Oficina</th><th style="text-align:right;">Acción</th></tr></thead>
@@ -304,12 +315,13 @@
                             </table>
                         </div>
                     </div>
+                    
                     <div id="view-fac-detail" style="display: none;">
                         <button class="btn-small btn-dark" onclick="closeFacDetail()" style="margin-bottom: 20px;">🔙 Volver a la lista</button>
                         <h2 id="fac-detail-title">Inventario de: </h2>
                         <div class="grid-2 admin-maestro-only">
                             <div class="panel-box">
-                                <h3>Trasladar material de Oficina</h3>
+                                <h3>Trasladar desde Oficina</h3>
                                 <div style="margin-bottom: 10px;">
                                     <input type="text" id="search-fac-prod" placeholder="🔍 Escribe para buscar producto..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 8px; outline: none;" onkeyup="renderSelectProductosOficina()">
                                     <select id="fac-sel-producto" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></select>
@@ -320,13 +332,17 @@
                                 </div>
                             </div>
                             <div class="panel-box">
-                                <h3>Asignar Producto Directo</h3>
+                                <h3>Crear/Asignar Directo</h3>
                                 <div style="margin-bottom: 10px;">
                                     <input type="text" id="fac-direct-prod" placeholder="Ej: Marcadores Azules" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                                 </div>
                                 <div style="display: flex; gap: 10px;">
+                                    <select id="fac-direct-type" onchange="toggleQtyInput('fac-direct-qty', this.value)" style="flex: 1.5; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <option value="consumible">Consumible</option>
+                                        <option value="activo">Activo Fijo</option>
+                                    </select>
                                     <input type="number" id="fac-direct-qty" value="1" min="1" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                    <button class="btn-small btn-success" onclick="addDirectProduct()" style="margin:0;">Crear y Sumar</button>
+                                    <button class="btn-small btn-success" onclick="addDirectProduct()" style="margin:0;">Sumar</button>
                                 </div>
                             </div>
                         </div>
@@ -463,12 +479,22 @@
         }
         document.getElementById('caja-fecha').valueAsDate = new Date();
 
+        /* ----- SMART TAGGING (ACTIVOS FIJOS) ----- */
+        function toggleQtyInput(id, val) {
+            const el = document.getElementById(id);
+            if(val === 'activo') { el.value = 1; el.disabled = true; } 
+            else { el.value = ''; el.disabled = false; }
+        }
+        function isActivo(p) { return p.includes('[ACTIVO]'); }
+        function formatProductName(p) { 
+            return p.replace(' [ACTIVO]', ' <span class="badge-activo">ACTIVO FIJO</span>'); 
+        }
+
         /* ----- BUSCADOR SEGURO Y COMPATIBLE ----- */
         function removeAccents(str) {
             try { return str.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); } 
             catch(e) { return str; } 
         }
-
         function filterTable(tableId, term) {
             const termLower = removeAccents(term.toLowerCase());
             const table = document.getElementById(tableId);
@@ -525,25 +551,19 @@
 
         /* ----- LOGIN CON PROTECCIÓN MAESTRA ----- */
         function login() {
-            const u = document.getElementById('username').value.trim(); 
-            const p = document.getElementById('password').value.trim();
+            const u = document.getElementById('username').value.trim(); const p = document.getElementById('password').value.trim();
             const validUser = usuarios.find(user => user.user === u && user.pass === p);
             
             if (validUser) {
-                // Validación para congelados (El admin nunca puede ser congelado)
                 if(validUser.activo === false && u !== 'admin') { alert('⚠️ Tu usuario ha sido suspendido.'); return; }
-                
                 currentUser = validUser;
-                // LLAVE MAESTRA: Si entra "admin", fuerza su nivel de seguridad a maestro absoluto
                 if (currentUser.user === 'admin') { currentUser.rol = 'maestro'; }
-
-                document.getElementById('lbl-current-user').innerText = currentUser.user; 
-                document.getElementById('lbl-current-rol').innerText = currentUser.rol.toUpperCase();
+                document.getElementById('lbl-current-user').innerText = currentUser.user; document.getElementById('lbl-current-rol').innerText = currentUser.rol.toUpperCase();
                 document.getElementById('login-screen').style.display = 'none'; document.getElementById('dashboard-wrapper').style.display = 'flex';
                 document.getElementById('username').value = ''; document.getElementById('password').value = ''; 
                 applyRoles(); updateAllViews();
             } else {
-                if(u === 'admin' && p === '123') { // Fallback de emergencia
+                if(u === 'admin' && p === '123') { 
                     currentUser = {user: 'admin', rol: 'maestro'};
                     document.getElementById('lbl-current-user').innerText = 'Admin Maestro'; document.getElementById('lbl-current-rol').innerText = 'MAESTRO';
                     applyRoles(); document.getElementById('login-screen').style.display = 'none'; document.getElementById('dashboard-wrapper').style.display = 'flex'; updateAllViews();
@@ -589,7 +609,6 @@
                     const freezeText = u.activo !== false ? '❄️ Congelar' : '🔥 Descongelar';
                     btns = `<button class="btn-small btn-info" onclick="openModalEditUser(${i})">✏️ Editar</button><button class="btn-small btn-warning" onclick="toggleFreezeUsuario(${i})">${freezeText}</button><button class="btn-small btn-danger" onclick="deleteUsuario(${i})">🗑️</button>`;
                 } else { btns = `<button class="btn-small btn-info" onclick="openModalEditUser(${i})">✏️ Clave</button> <span style="font-size:12px; color:#64748b;">(Protegido)</span>`; }
-                
                 let showRol = isMaster ? 'MAESTRO' : u.rol.toUpperCase();
                 tbody.innerHTML += `<tr><td><strong>${u.user}</strong></td><td>***</td><td><span class="badge" style="background:${rolBg}; color:${rolColor}">${showRol}</span></td><td>${statusBadge}</td><td>${btns}</td></tr>`;
             });
@@ -604,37 +623,54 @@
         function renderGeneral() {
             const tbody = document.querySelector('#table-general tbody'); tbody.innerHTML = ''; let todos = new Set(Object.keys(inventarioOficina));
             facilitadores.forEach(f => Object.keys(f.inventario).forEach(p => todos.add(p)));
-            todos.forEach(prod => { let sOfi = inventarioOficina[prod] || 0; let sFac = 0; facilitadores.forEach(f => { if(f.inventario[prod]) sFac += f.inventario[prod]; }); tbody.innerHTML += `<tr><td><strong>${prod}</strong></td><td>${sOfi}</td><td>${sFac}</td><td><span class="badge">${sOfi + sFac}</span></td></tr>`; });
+            todos.forEach(prod => { let sOfi = inventarioOficina[prod] || 0; let sFac = 0; facilitadores.forEach(f => { if(f.inventario[prod]) sFac += f.inventario[prod]; }); tbody.innerHTML += `<tr><td><strong>${formatProductName(prod)}</strong></td><td>${sOfi}</td><td>${sFac}</td><td><span class="badge">${sOfi + sFac}</span></td></tr>`; });
         }
+        
         function renderOficina() {
             const tbody = document.querySelector('#table-oficina tbody'); tbody.innerHTML = '';
             for (let p in inventarioOficina) {
                 let isElevated = (currentUser.rol === 'admin' || currentUser.rol === 'maestro');
-                let btnSumar = isElevated ? `<button class="btn-small" onclick="promptAdjustOffice('${p}', 'add')">➕ Sumar</button>` : '';
+                // Si es Activo, no puede sumar ni restar con los botones simples
+                let btnSumar = (isElevated && !isActivo(p)) ? `<button class="btn-small" onclick="promptAdjustOffice('${p}', 'add')">➕ Sumar</button>` : '';
+                let btnRestar = (!isActivo(p)) ? `<button class="btn-small btn-warning" onclick="promptAdjustOffice('${p}', 'sub')">➖ Restar</button>` : '';
                 let btnBorrar = isElevated ? `<td><button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button></td>` : '';
-                tbody.innerHTML += `<tr><td>${p}</td><td><strong>${inventarioOficina[p]}</strong></td><td>${btnSumar} <button class="btn-small btn-warning" onclick="promptAdjustOffice('${p}', 'sub')">➖ Restar</button></td>${btnBorrar}</tr>`;
+                
+                tbody.innerHTML += `<tr><td>${formatProductName(p)}</td><td><strong>${inventarioOficina[p]}</strong></td><td>${btnSumar} ${btnRestar}</td>${btnBorrar}</tr>`;
             }
         }
-        function addOfficeItem() { const n = document.getElementById('new-item-name').value.trim(); const q = parseInt(document.getElementById('new-item-qty').value) || 0; if (n && inventarioOficina[n] === undefined) { inventarioOficina[n] = q; document.getElementById('new-item-name').value = ''; saveData(); updateAllViews(); } }
-        function deleteOfficeItem(p) { if(confirm(`¿Enviar '${p}' a papelera?`)) { papelera.productos[p] = inventarioOficina[p]; delete inventarioOficina[p]; saveData(); updateAllViews(); } }
-        function promptAdjustOffice(p, action) { const verb = action === 'add' ? 'sumar' : 'restar'; const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}'?`, "1"); if (!input || input.trim() === "") return; const qty = parseInt(input); if (isNaN(qty) || qty <= 0) return alert("⚠️ Inválido."); const amount = action === 'add' ? qty : -qty; if (inventarioOficina[p] + amount < 0) return alert("⚠️ Stock insuficiente."); inventarioOficina[p] += amount; movimientos.unshift({ tipo: 'ajuste', codigo: 'AJUSTE', facilitador: '-', fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}'` }); saveData(); updateAllViews(); }
-
-        /* ----- MÓDULO CAJAS (REDISEÑADO) ----- */
-        function nextCajaStep() {
-            document.getElementById('caja-step-1').style.display = 'none';
-            document.getElementById('caja-step-2').style.display = 'block';
-            document.getElementById('caja-search-input').value = '';
-            renderCajaSearchList(); 
-            renderCajaChecklist();
+        
+        function addOfficeItem() { 
+            let n = document.getElementById('new-item-name').value.trim(); 
+            const type = document.getElementById('new-item-type').value;
+            let q = parseInt(document.getElementById('new-item-qty').value) || 0; 
+            
+            if (n) {
+                if(type === 'activo') { n += ' [ACTIVO]'; q = 1; }
+                if (inventarioOficina[n] === undefined) { 
+                    inventarioOficina[n] = q; 
+                    document.getElementById('new-item-name').value = ''; 
+                    saveData(); updateAllViews(); 
+                } else {
+                    alert("Ese producto/activo ya existe.");
+                }
+            }
+        }
+        
+        function deleteOfficeItem(p) { if(confirm(`¿Enviar '${p.replace(' [ACTIVO]','')}' a papelera?`)) { papelera.productos[p] = inventarioOficina[p]; delete inventarioOficina[p]; saveData(); updateAllViews(); } }
+        function promptAdjustOffice(p, action) { 
+            if(isActivo(p)) return; // Protección extra
+            const verb = action === 'add' ? 'sumar' : 'restar'; const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}'?`, "1"); if (!input || input.trim() === "") return; const qty = parseInt(input); if (isNaN(qty) || qty <= 0) return alert("⚠️ Inválido."); const amount = action === 'add' ? qty : -qty; if (inventarioOficina[p] + amount < 0) return alert("⚠️ Stock insuficiente."); inventarioOficina[p] += amount; movimientos.unshift({ tipo: 'ajuste', codigo: 'AJUSTE', facilitador: '-', fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}'` }); saveData(); updateAllViews(); 
         }
 
+        /* ----- MÓDULO CAJAS (REDISEÑADO) ----- */
+        function nextCajaStep() { document.getElementById('caja-step-1').style.display = 'none'; document.getElementById('caja-step-2').style.display = 'block'; document.getElementById('caja-search-input').value = ''; renderCajaSearchList(); renderCajaChecklist(); }
         function prevCajaStep() { document.getElementById('caja-step-2').style.display = 'none'; document.getElementById('caja-step-1').style.display = 'block'; }
 
         function openModalPlantillas() {
             renderPlantillasList(); document.getElementById('modal-plantilla-search').value = '';
             const div = document.getElementById('plantilla-productos-list'); div.innerHTML = ''; let hasProd = false;
             for(let p in inventarioOficina) {
-                div.innerHTML += `<label class="lbl-modal-prod" style="display:block; margin-bottom:8px; padding:5px; cursor:pointer; border-bottom:1px solid #f1f5f9;"><input type="checkbox" class="chk-plantilla-prod" value="${p}"> <span class="prod-text">${p}</span></label>`; hasProd = true;
+                div.innerHTML += `<label class="lbl-modal-prod" style="display:block; margin-bottom:8px; padding:5px; cursor:pointer; border-bottom:1px solid #f1f5f9;"><input type="checkbox" class="chk-plantilla-prod" value="${p}"> <span class="prod-text">${formatProductName(p)}</span></label>`; hasProd = true;
             }
             if(!hasProd) div.innerHTML = `<span style="color:#64748b; font-size:13px;">Registra productos en la oficina primero.</span>`; openModal('modal-plantillas');
         }
@@ -669,8 +705,8 @@
             container.style.display = 'block'; const pl = plantillas.find(x => x.id == pid); content.innerHTML = '';
             pl.productos.forEach(p => {
                 const inCart = carritoCaja[p] !== undefined; 
-                if(inCart) { content.innerHTML += `<div class="chk-badge chk-done"><span>${p}</span> <span>✅</span></div>`; } 
-                else { content.innerHTML += `<div class="chk-badge chk-pending"><span>${p}</span> <span>⏳</span></div>`; }
+                if(inCart) { content.innerHTML += `<div class="chk-badge chk-done"><span>${formatProductName(p)}</span> <span>✅</span></div>`; } 
+                else { content.innerHTML += `<div class="chk-badge chk-pending"><span>${formatProductName(p)}</span> <span>⏳</span></div>`; }
             });
         }
 
@@ -681,45 +717,42 @@
             const tbody = document.querySelector('#table-caja-search tbody');
             if (!tbody) return;
             
-            let html = '';
-            let count = 0;
-            
+            let html = ''; let count = 0;
             for (let p in inventarioOficina) {
                 const stock = parseInt(inventarioOficina[p]) || 0;
                 const pName = removeAccents(p.toLowerCase());
                 
                 if (pName.includes(term)) {
-                    // Si no hay stock, muestra el producto pero bloquea el botón
                     const btnHtml = stock > 0 
                         ? `<button class="btn-small btn-dark" onclick="promptCajaItem('${p}')">+ Añadir</button>` 
                         : `<span style="color:#ef4444; font-size:13px; font-weight:bold;">Agotado</span>`;
-
-                    html += `<tr>
-                        <td><strong>${p}</strong></td>
-                        <td><span class="badge" style="background:#e2e8f0; color:#1e293b;">${stock}</span></td>
-                        <td style="text-align:right;">${btnHtml}</td>
-                    </tr>`;
+                    html += `<tr><td><strong>${formatProductName(p)}</strong></td><td><span class="badge" style="background:#e2e8f0; color:#1e293b;">${stock}</span></td><td style="text-align:right;">${btnHtml}</td></tr>`;
                     count++;
                 }
             }
-            
-            if (count === 0) {
-                html = `<tr><td colspan="3" style="text-align:center; color:#64748b; padding:20px;">No se encontraron productos registrados en el sistema.</td></tr>`;
-            }
-            
+            if (count === 0) { html = `<tr><td colspan="3" style="text-align:center; color:#64748b; padding:20px;">No se encontraron productos registrados en el sistema.</td></tr>`; }
             tbody.innerHTML = html;
         }
 
         function promptCajaItem(p) {
-            const input = prompt(`¿Cuántas unidades de '${p}' enviarás en esta caja? (Stock: ${inventarioOficina[p]})`, "1"); if (!input || input.trim() === "") return;
-            const qty = parseInt(input); if (isNaN(qty) || qty <= 0) return alert("Número inválido."); 
-            const inCart = carritoCaja[p] || 0; if ((inCart + qty) > inventarioOficina[p]) return alert("⚠️ No hay suficiente stock en oficina."); 
+            let qty = 1;
+            if(!isActivo(p)) {
+                const input = prompt(`¿Cuántas unidades de '${p.replace(' [ACTIVO]','')}' enviarás en esta caja? (Stock: ${inventarioOficina[p]})`, "1"); 
+                if (!input || input.trim() === "") return;
+                qty = parseInt(input); if (isNaN(qty) || qty <= 0) return alert("Número inválido."); 
+            } else {
+                if(!confirm(`Se añadirá el Activo Fijo '${p.replace(' [ACTIVO]','')}' a la caja. ¿Continuar?`)) return;
+            }
+            
+            const inCart = carritoCaja[p] || 0; 
+            if ((inCart + qty) > inventarioOficina[p]) return alert("⚠️ No hay suficiente stock en oficina."); 
+            
             carritoCaja[p] = inCart + qty; renderCajaCart(); renderCajaChecklist(); document.getElementById('caja-search-input').value = ''; renderCajaSearchList();
         }
         function removeCajaItem(p) { delete carritoCaja[p]; renderCajaCart(); renderCajaChecklist(); }
         function renderCajaCart() {
             const tbody = document.querySelector('#table-caja-cart tbody'); tbody.innerHTML = ''; let hasItems = false;
-            for (let p in carritoCaja) { hasItems = true; tbody.innerHTML += `<tr><td><strong>${p}</strong></td><td><span class="badge">${carritoCaja[p]}</span></td><td style="text-align:right;"><button class="btn-small btn-danger" onclick="removeCajaItem('${p}')">X</button></td></tr>`; }
+            for (let p in carritoCaja) { hasItems = true; tbody.innerHTML += `<tr><td><strong>${formatProductName(p)}</strong></td><td><span class="badge">${carritoCaja[p]}</span></td><td style="text-align:right;"><button class="btn-small btn-danger" onclick="removeCajaItem('${p}')">X</button></td></tr>`; }
             if(!hasItems) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#64748b;">La caja está vacía</td></tr>`;
         }
 
@@ -737,32 +770,19 @@
             saveData(); updateAllViews(); prevCajaStep(); showSection('movimientos');
         }
 
-        /* ----- MOVIMIENTOS E HISTORIAL (CON BORRADO PARA MAESTRO) ----- */
+        /* ----- MOVIMIENTOS E HISTORIAL ----- */
         function renderMovimientos() {
             const tbody = document.querySelector('#table-movimientos tbody'); tbody.innerHTML = '';
             movimientos.forEach((m, i) => { 
-                let btnDetalle = m.tipo === 'caja' ? `<button class="btn-small btn-info" onclick="openModalCaja(${i})">📦 Ver Contenido</button>` : `<span style="font-size:13px; color:#64748b;">${m.detalle}</span>`; 
+                let btnDetalle = m.tipo === 'caja' ? `<button class="btn-small btn-info" onclick="openModalCaja(${i})">📦 Ver Contenido</button>` : `<span style="font-size:13px; color:#64748b;">${formatProductName(m.detalle)}</span>`; 
                 let tdBorrar = `<td class="maestro-only" style="display:${currentUser.rol === 'maestro' ? 'table-cell' : 'none'}"><button class="btn-small btn-danger" onclick="deleteMovimiento(${i})">🗑️</button></td>`;
-                
-                tbody.innerHTML += `<tr>
-                    <td><strong>${m.codigo}</strong></td><td>${m.facilitador}</td><td>${m.fecha}</td>
-                    <td>${m.lugar}</td><td>${m.accion}</td>
-                    <td><span class="badge" style="background:#e2e8f0; color:var(--primary-dark)">${m.operador}</span></td>
-                    <td>${btnDetalle}</td>${tdBorrar}
-                </tr>`; 
+                tbody.innerHTML += `<tr><td><strong>${m.codigo}</strong></td><td>${m.facilitador}</td><td>${m.fecha}</td><td>${m.lugar}</td><td>${m.accion}</td><td><span class="badge" style="background:#e2e8f0; color:var(--primary-dark)">${m.operador}</span></td><td>${btnDetalle}</td>${tdBorrar}</tr>`; 
             });
         }
-        function openModalCaja(index) { const mov = movimientos[index]; document.getElementById('modal-caja-title').innerText = `Contenido: ${mov.codigo}`; const tbody = document.querySelector('#table-modal-content tbody'); tbody.innerHTML = ''; for (let p in mov.contenido) tbody.innerHTML += `<tr><td><strong>${p}</strong></td><td><span class="badge">${mov.contenido[p]} Unds.</span></td></tr>`; openModal('modal-caja'); }
-        
-        // Función exclusiva para borrar el historial
-        function deleteMovimiento(i) {
-            if(confirm('¿Borrar este registro del historial? (Nota: Esto NO altera el stock en el inventario, solo limpia el registro visual del historial)')) {
-                movimientos.splice(i, 1);
-                saveData();
-                updateAllViews();
-            }
-        }
+        function openModalCaja(index) { const mov = movimientos[index]; document.getElementById('modal-caja-title').innerText = `Contenido: ${mov.codigo}`; const tbody = document.querySelector('#table-modal-content tbody'); tbody.innerHTML = ''; for (let p in mov.contenido) tbody.innerHTML += `<tr><td><strong>${formatProductName(p)}</strong></td><td><span class="badge">${mov.contenido[p]} Unds.</span></td></tr>`; openModal('modal-caja'); }
+        function deleteMovimiento(i) { if(confirm('¿Borrar este registro del historial? (NO altera el stock)')) { movimientos.splice(i, 1); saveData(); updateAllViews(); } }
 
+        /* ----- FACILITADORES ----- */
         function countTotalItems(inv) { return Object.values(inv).reduce((a, b) => a + b, 0); }
         function renderFacilitatorsList() {
             const tbody = document.querySelector('#table-fac-list tbody'); tbody.innerHTML = '';
@@ -773,21 +793,42 @@
         function openFacDetail(i) { currentFacIndex = i; document.getElementById('view-fac-list').style.display = 'none'; document.getElementById('view-fac-detail').style.display = 'block'; renderFacilitatorDetail(); }
         function closeFacDetail() { currentFacIndex = null; document.getElementById('view-fac-list').style.display = 'block'; document.getElementById('view-fac-detail').style.display = 'none'; }
         
-        function renderSelectProductosOficina() { const term = removeAccents((document.getElementById('search-fac-prod')?.value || '').toLowerCase()); const sel = document.getElementById('fac-sel-producto'); if(!sel) return; sel.innerHTML = ''; let hasMatches = false; for (let p in inventarioOficina) { if (removeAccents(p.toLowerCase()).includes(term) && inventarioOficina[p] > 0) { sel.innerHTML += `<option value="${p}">${p} (Stock: ${inventarioOficina[p]})</option>`; hasMatches = true; } } if (!hasMatches) sel.innerHTML = `<option value="">Sin stock / No existe</option>`; }
+        function renderSelectProductosOficina() { 
+            const term = removeAccents((document.getElementById('search-fac-prod')?.value || '').toLowerCase()); const sel = document.getElementById('fac-sel-producto'); if(!sel) return; sel.innerHTML = ''; let hasMatches = false; 
+            for (let p in inventarioOficina) { if (removeAccents(p.toLowerCase()).includes(term) && inventarioOficina[p] > 0) { sel.innerHTML += `<option value="${p}">${p.replace(' [ACTIVO]',' (ACTIVO FIJO)')} (Stock: ${inventarioOficina[p]})</option>`; hasMatches = true; } } 
+            if (!hasMatches) sel.innerHTML = `<option value="">Sin stock / No existe</option>`; 
+        }
         function renderFacilitatorDetail() {
             const f = facilitadores[currentFacIndex]; document.getElementById('fac-detail-title').innerText = `Inventario de: ${f.nombre}`; if(document.getElementById('search-fac-prod')) { document.getElementById('search-fac-prod').value = ''; renderSelectProductosOficina(); }
             const tbody = document.querySelector('#table-fac-inventory tbody'); tbody.innerHTML = '';
             for (let p in f.inventario) {
-                let isElevated = (currentUser.rol === 'admin' || currentUser.rol === 'maestro'); let btnSumar = isElevated ? `<button class="btn-small" onclick="promptAdjustFacItem('${p}', 'add')">➕ Sumar</button>` : '';
-                tbody.innerHTML += `<tr><td>${p}</td><td><strong>${f.inventario[p]}</strong></td><td>${btnSumar}<button class="btn-small btn-warning" onclick="promptAdjustFacItem('${p}', 'sub')">➖ Restar</button><button class="btn-small btn-danger admin-maestro-only" onclick="returnToOffice('${p}')" style="display:${isElevated?'inline-block':'none'}">Devolver Todo</button></td></tr>`;
+                let isElevated = (currentUser.rol === 'admin' || currentUser.rol === 'maestro'); 
+                let btnSumar = (isElevated && !isActivo(p)) ? `<button class="btn-small" onclick="promptAdjustFacItem('${p}', 'add')">➕ Sumar</button>` : '';
+                let btnRestar = (!isActivo(p)) ? `<button class="btn-small btn-warning" onclick="promptAdjustFacItem('${p}', 'sub')">➖ Restar</button>` : '';
+                tbody.innerHTML += `<tr><td>${formatProductName(p)}</td><td><strong>${f.inventario[p]}</strong></td><td>${btnSumar} ${btnRestar} <button class="btn-small btn-danger admin-maestro-only" onclick="returnToOffice('${p}')" style="display:${isElevated?'inline-block':'none'}">Devolver Todo</button></td></tr>`;
             }
         }
-        function promptAdjustFacItem(p, action) { const verb = action === 'add' ? 'sumar' : 'restar'; const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}' de este facilitador?`, "1"); if (!input || input.trim() === "") return; const qty = parseInt(input); if (isNaN(qty) || qty <= 0) return alert("⚠️ Inválido."); const amount = action === 'add' ? qty : -qty; const f = facilitadores[currentFacIndex]; if (f.inventario[p] + amount < 0) return alert("⚠️ No puedes restar más de lo que tiene."); f.inventario[p] += amount; if (f.inventario[p] === 0) delete f.inventario[p]; movimientos.unshift({ tipo: 'ajuste', codigo: 'AJUSTE', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}' a facilitador` }); saveData(); updateAllViews(); }
+        function promptAdjustFacItem(p, action) { 
+            if(isActivo(p)) return;
+            const verb = action === 'add' ? 'sumar' : 'restar'; const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}' de este facilitador?`, "1"); if (!input || input.trim() === "") return; const qty = parseInt(input); if (isNaN(qty) || qty <= 0) return alert("⚠️ Inválido."); const amount = action === 'add' ? qty : -qty; const f = facilitadores[currentFacIndex]; if (f.inventario[p] + amount < 0) return alert("⚠️ No puedes restar más de lo que tiene."); f.inventario[p] += amount; if (f.inventario[p] === 0) delete f.inventario[p]; movimientos.unshift({ tipo: 'ajuste', codigo: 'AJUSTE', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}' a facilitador` }); saveData(); updateAllViews(); 
+        }
         function transferFromOffice() { const p = document.getElementById('fac-sel-producto').value; const q = parseInt(document.getElementById('fac-transfer-qty').value); if (p && q > 0) { if (inventarioOficina[p] >= q) { inventarioOficina[p] -= q; const f = facilitadores[currentFacIndex]; f.inventario[p] = (f.inventario[p] || 0) + q; movimientos.unshift({ tipo: 'ajuste', codigo: 'TRASLADO', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Trasladó ${q} '${p}' desde oficina` }); saveData(); updateAllViews(); } else alert('Stock insuficiente en oficina'); } }
-        function addDirectProduct() { const p = document.getElementById('fac-direct-prod').value.trim(); const q = parseInt(document.getElementById('fac-direct-qty').value); if (p && q > 0) { if (inventarioOficina[p] === undefined) inventarioOficina[p] = 0; const f = facilitadores[currentFacIndex]; f.inventario[p] = (f.inventario[p] || 0) + q; movimientos.unshift({ tipo: 'ajuste', codigo: 'ASIGNACIÓN DIRECTA', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Creó y asignó ${q} '${p}'` }); saveData(); updateAllViews(); } }
+        
+        function addDirectProduct() { 
+            let p = document.getElementById('fac-direct-prod').value.trim(); 
+            const type = document.getElementById('fac-direct-type').value;
+            let q = parseInt(document.getElementById('fac-direct-qty').value); 
+            if (p && q > 0) { 
+                if(type === 'activo') { p += ' [ACTIVO]'; q = 1; }
+                if (inventarioOficina[p] === undefined) inventarioOficina[p] = 0; 
+                const f = facilitadores[currentFacIndex]; f.inventario[p] = (f.inventario[p] || 0) + q; 
+                movimientos.unshift({ tipo: 'ajuste', codigo: 'ASIGNACIÓN DIRECTA', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Creó y asignó ${q} '${p}'` }); saveData(); updateAllViews(); 
+            } 
+        }
         function returnToOffice(p) { const f = facilitadores[currentFacIndex]; if (f.inventario[p] > 0) { inventarioOficina[p] = (inventarioOficina[p] || 0) + f.inventario[p]; movimientos.unshift({ tipo: 'ajuste', codigo: 'DEVOLUCIÓN', facilitador: f.nombre, fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Devolvió todo el stock (${f.inventario[p]}) de '${p}' a oficina` }); delete f.inventario[p]; saveData(); updateAllViews(); } }
 
-        function renderPapelera() { const tP = document.querySelector('#table-papelera-prod tbody'); tP.innerHTML = ''; for(let p in papelera.productos) { tP.innerHTML += `<tr><td>${p}</td><td>${papelera.productos[p]}</td><td><button class="btn-small btn-success" onclick="restoreProduct('${p}')">♻️</button><button class="btn-small btn-danger" onclick="hardDeleteProduct('${p}')">❌</button></td></tr>`; } const tF = document.querySelector('#table-papelera-fac tbody'); tF.innerHTML = ''; papelera.facilitadores.forEach((f, i) => { tF.innerHTML += `<tr><td>${f.id}</td><td>${f.nombre}</td><td>${countTotalItems(f.inventario)} items</td><td><button class="btn-small btn-success" onclick="restoreFacilitator(${i})">♻️</button><button class="btn-small btn-danger" onclick="hardDeleteFacilitator(${i})">❌</button></td></tr>`; }); }
+        /* ----- PAPELERA ----- */
+        function renderPapelera() { const tP = document.querySelector('#table-papelera-prod tbody'); tP.innerHTML = ''; for(let p in papelera.productos) { tP.innerHTML += `<tr><td>${formatProductName(p)}</td><td>${papelera.productos[p]}</td><td><button class="btn-small btn-success" onclick="restoreProduct('${p}')">♻️</button><button class="btn-small btn-danger" onclick="hardDeleteProduct('${p}')">❌</button></td></tr>`; } const tF = document.querySelector('#table-papelera-fac tbody'); tF.innerHTML = ''; papelera.facilitadores.forEach((f, i) => { tF.innerHTML += `<tr><td>${f.id}</td><td>${f.nombre}</td><td>${countTotalItems(f.inventario)} items</td><td><button class="btn-small btn-success" onclick="restoreFacilitator(${i})">♻️</button><button class="btn-small btn-danger" onclick="hardDeleteFacilitator(${i})">❌</button></td></tr>`; }); }
         function restoreProduct(p) { inventarioOficina[p] = (inventarioOficina[p] !== undefined ? inventarioOficina[p] : 0) + papelera.productos[p]; delete papelera.productos[p]; saveData(); updateAllViews(); }
         function hardDeleteProduct(p) { if(confirm('¿Eliminar permanente?')) { delete papelera.productos[p]; saveData(); updateAllViews(); } }
         function restoreFacilitator(i) { facilitadores.push(papelera.facilitadores.splice(i, 1)[0]); saveData(); updateAllViews(); }
