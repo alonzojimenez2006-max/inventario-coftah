@@ -119,6 +119,8 @@
             .form-row button { margin-top: 10px; width: 100%; }
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -176,7 +178,10 @@
                 
                 <!-- INVENTARIO GENERAL -->
                 <div id="general" class="section active">
-                    <h2>Inventario General</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                        <h2 style="margin-bottom: 0;">Inventario General</h2>
+                        <button class="btn-small btn-danger" onclick="exportarPDFGeneral()">📄 PDF Inventario General</button>
+                    </div>
                     <p style="color: #64748b;">Visión global del stock físico en oficina y el material distribuido.</p>
                     <div class="search-container">
                         <input type="text" class="search-input" placeholder="🔍 Buscar producto en general..." onkeyup="filterTable('table-general', this.value)">
@@ -191,7 +196,10 @@
 
                 <!-- INVENTARIO OFICINA -->
                 <div id="oficina" class="section">
-                    <h2>Inventario Oficina</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                        <h2 style="margin-bottom: 0;">Inventario Oficina</h2>
+                        <button class="btn-small btn-danger" onclick="exportarPDFOficina()">📄 PDF Inventario Oficina</button>
+                    </div>
                     <div class="form-row admin-maestro-only">
                         <div><label>Nuevo Registro</label><input type="text" id="new-item-name" placeholder="Ej: Libretas o Proyector"></div>
                         <div>
@@ -648,7 +656,6 @@
             const tbody = document.querySelector('#table-oficina tbody'); tbody.innerHTML = '';
             for (let p in inventarioOficina) {
                 let isElevated = (currentUser.rol === 'admin' || currentUser.rol === 'maestro');
-                // Si es Activo o Ilimitado, no puede sumar ni restar con los botones simples
                 let btnSumar = (isElevated && !isActivo(p) && !isIlimitado(p)) ? `<button class="btn-small" onclick="promptAdjustOffice('${p}', 'add')">➕ Sumar</button>` : '';
                 let btnRestar = (!isActivo(p) && !isIlimitado(p)) ? `<button class="btn-small btn-warning" onclick="promptAdjustOffice('${p}', 'sub')">➖ Restar</button>` : '';
                 let btnBorrar = isElevated ? `<td><button class="btn-small btn-danger" onclick="deleteOfficeItem('${p}')">🗑️</button></td>` : '';
@@ -656,6 +663,111 @@
                 let displayStock = isIlimitado(p) ? '∞' : inventarioOficina[p];
                 tbody.innerHTML += `<tr><td>${formatProductName(p)}</td><td><strong>${displayStock}</strong></td><td>${btnSumar} ${btnRestar}</td>${btnBorrar}</tr>`;
             }
+        }
+
+        /* ----- EXPORTACIÓN DE REPORTES PDF ----- */
+        function crearEncabezadoPDF(doc, titulo) {
+            doc.setFillColor(0, 40, 85);
+            doc.rect(0, 0, 210, 28, 'F');
+            doc.setFillColor(255, 193, 7);
+            doc.rect(0, 28, 210, 2, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(15);
+            doc.text(titulo, 14, 13);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            const fechaHoy = new Date().toLocaleString('es-VE');
+            const usuarioActual = currentUser ? currentUser.user : 'Sistema';
+            doc.text(`Generado el: ${fechaHoy}  |  Usuario: ${usuarioActual}`, 14, 22);
+        }
+
+        function limpiarNombrePDF(prod) {
+            return prod
+                .replace(' [ACTIVO]', '')
+                .replace(' [ILIMITADO]', '');
+        }
+
+        function obtenerTipoPDF(prod) {
+            if (isActivo(prod)) return 'Activo Fijo';
+            if (isIlimitado(prod)) return 'Ilimitado';
+            return 'Consumible';
+        }
+
+        function exportarPDFGeneral() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            crearEncabezadoPDF(doc, "REPORTE DE INVENTARIO GENERAL");
+
+            let todos = new Set(Object.keys(inventarioOficina));
+            facilitadores.forEach(f => Object.keys(f.inventario).forEach(p => todos.add(p)));
+
+            const filas = [];
+            Array.from(todos).sort().forEach(prod => {
+                let sOfi = inventarioOficina[prod] || 0;
+                let sFac = 0;
+                facilitadores.forEach(f => {
+                    if (f.inventario[prod]) {
+                        sFac += (f.inventario[prod] === '∞' ? 0 : f.inventario[prod]);
+                    }
+                });
+
+                const colOfi = isIlimitado(prod) ? 'Ilimitado' : sOfi;
+                const colFac = isIlimitado(prod) ? 'Ilimitado' : sFac;
+                const colTot = isIlimitado(prod) ? 'Ilimitado' : (sOfi + sFac);
+
+                filas.push([limpiarNombrePDF(prod), obtenerTipoPDF(prod), colOfi, colFac, colTot]);
+            });
+
+            doc.autoTable({
+                startY: 36,
+                head: [['Producto / Material', 'Tipo', 'Oficina', 'Distribuido', 'Total Global']],
+                body: filas.length ? filas : [['Sin registros en el inventario', '-', '-', '-', '-']],
+                theme: 'grid',
+                headStyles: { fillColor: [0, 40, 85], textColor: 255, fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                styles: { fontSize: 9.5, cellPadding: 3.5 },
+                columnStyles: {
+                    1: { halign: 'center' },
+                    2: { halign: 'center' },
+                    3: { halign: 'center' },
+                    4: { halign: 'center', fontStyle: 'bold' }
+                }
+            });
+
+            const fechaArchivo = new Date().toISOString().split('T')[0];
+            doc.save(`Inventario_General_${fechaArchivo}.pdf`);
+        }
+
+        function exportarPDFOficina() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            crearEncabezadoPDF(doc, "REPORTE DE INVENTARIO EN OFICINA");
+
+            const filas = [];
+            Object.keys(inventarioOficina).sort().forEach(prod => {
+                const stock = isIlimitado(prod) ? 'Ilimitado' : (inventarioOficina[prod] || 0);
+                filas.push([limpiarNombrePDF(prod), obtenerTipoPDF(prod), stock]);
+            });
+
+            doc.autoTable({
+                startY: 36,
+                head: [['Producto / Material', 'Clasificación', 'Stock en Oficina']],
+                body: filas.length ? filas : [['Sin productos registrados en oficina', '-', '-']],
+                theme: 'grid',
+                headStyles: { fillColor: [0, 40, 85], textColor: 255, fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                styles: { fontSize: 10, cellPadding: 4 },
+                columnStyles: {
+                    1: { halign: 'center' },
+                    2: { halign: 'center', fontStyle: 'bold' }
+                }
+            });
+
+            const fechaArchivo = new Date().toISOString().split('T')[0];
+            doc.save(`Inventario_Oficina_${fechaArchivo}.pdf`);
         }
         
         function addOfficeItem() { 
@@ -665,12 +777,11 @@
             
             if (n) {
                 if(type === 'activo') { n += ' [ACTIVO]'; q = 1; }
-                if(type === 'ilimitado') { n += ' [ILIMITADO]'; q = 1; /* Valor interno 1 para que exista en búsquedas */ }
+                if(type === 'ilimitado') { n += ' [ILIMITADO]'; q = 1; }
                 
                 if (inventarioOficina[n] === undefined) { 
                     inventarioOficina[n] = q; 
                     document.getElementById('new-item-name').value = ''; 
-                    // Limpiar el select y regresar al primer estado para evitar errores en siguientes registros
                     document.getElementById('new-item-type').value = 'consumible';
                     toggleQtyInput('new-item-qty', 'consumible');
                     saveData(); updateAllViews(); 
@@ -682,7 +793,7 @@
         
         function deleteOfficeItem(p) { if(confirm(`¿Enviar '${p.replace(/ \[(ACTIVO|ILIMITADO)\]/,'')}' a papelera?`)) { papelera.productos[p] = inventarioOficina[p]; delete inventarioOficina[p]; saveData(); updateAllViews(); } }
         function promptAdjustOffice(p, action) { 
-            if(isActivo(p) || isIlimitado(p)) return; // Protección extra
+            if(isActivo(p) || isIlimitado(p)) return;
             const verb = action === 'add' ? 'sumar' : 'restar'; const input = prompt(`¿Qué cantidad deseas ${verb} al producto '${p}'?`, "1"); if (!input || input.trim() === "") return; const qty = parseInt(input); if (isNaN(qty) || qty <= 0) return alert("⚠️ Inválido."); const amount = action === 'add' ? qty : -qty; if (inventarioOficina[p] + amount < 0) return alert("⚠️ Stock insuficiente."); inventarioOficina[p] += amount; movimientos.unshift({ tipo: 'ajuste', codigo: 'AJUSTE', facilitador: '-', fecha: new Date().toLocaleDateString('es-VE'), lugar: '-', accion: '-', operador: currentUser.user, detalle: `Se ${verb}on ${qty} de '${p}'` }); saveData(); updateAllViews(); 
         }
 
@@ -771,7 +882,6 @@
         function promptCajaItem(p) {
             let qty = 1;
             if(isIlimitado(p)) {
-                // Va directo, no pide cantidad y su valor en carrito es infinito
                 carritoCaja[p] = '∞';
             } else if(isActivo(p)) {
                 if(!confirm(`Se añadirá el Activo Fijo '${p.replace(' [ACTIVO]','')}' a la caja. ¿Continuar?`)) return;
@@ -801,7 +911,6 @@
             const lug = document.getElementById('caja-lugar').value.trim() || 'No especificado'; const acc = document.getElementById('caja-accion').value.trim() || 'No especificado';
             if (Object.keys(carritoCaja).length === 0) return alert("⚠️ La caja está vacía."); 
             
-            // Solo descontar de la oficina lo que no es infinito
             for (let p in carritoCaja) {
                 if(!isIlimitado(p)) {
                     inventarioOficina[p] -= carritoCaja[p];
@@ -838,7 +947,6 @@
         function deleteMovimiento(i) { if(confirm('¿Borrar este registro del historial? (NO altera el stock)')) { movimientos.splice(i, 1); saveData(); updateAllViews(); } }
 
         /* ----- FACILITADORES ----- */
-        // Para que la etiqueta no sume el "∞" como un NaN en la lógica matemática general
         function countTotalItems(inv) { return Object.values(inv).reduce((a, b) => a + (b === '∞' ? 1 : b), 0); }
         
         function renderFacilitatorsList() {
@@ -916,7 +1024,6 @@
                     f.inventario[p] = (f.inventario[p] || 0) + q; 
                 }
                 
-                // Reiniciar campos
                 document.getElementById('fac-direct-type').value = 'consumible';
                 toggleQtyInput('fac-direct-qty', 'consumible');
                 
@@ -944,4 +1051,3 @@
     </script>
 </body>
 </html>
-```<FollowUp>
